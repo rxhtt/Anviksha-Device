@@ -1,84 +1,47 @@
-import React, { useRef, useState } from 'react';
-import { WifiIcon, WifiOffIcon, ArrowLeftIcon } from './IconComponents';
+
+import React from 'react';
+import { WifiIcon, WifiOffIcon, ArrowLeftIcon } from './IconComponents.tsx';
 
 interface HeaderProps {
-  onEmergencyExit: () => void;
   isOnline: boolean;
   currentScreen: string;
   onBack: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onEmergencyExit, isOnline, currentScreen, onBack }) => {
-  const pressTimer = useRef<number | null>(null);
-  const progressInterval = useRef<number | null>(null);
-  const [pressProgress, setPressProgress] = useState(0);
-  
-  const LONG_PRESS_DURATION = 2000; // 2 seconds
+const Header: React.FC<HeaderProps> = ({ isOnline, currentScreen, onBack }) => {
   const showBackButton = currentScreen !== 'welcome';
 
-  const handlePressStart = () => {
-    handlePressEnd();
-    progressInterval.current = window.setInterval(() => {
-        setPressProgress(p => p >= 100 ? 100 : p + (100 / (LONG_PRESS_DURATION / 100)));
-    }, 100);
-    pressTimer.current = window.setTimeout(() => {
-        onEmergencyExit();
-        handlePressEnd();
-    }, LONG_PRESS_DURATION);
-  };
-
-  const handlePressEnd = () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-    if (progressInterval.current) clearInterval(progressInterval.current);
-    pressTimer.current = null;
-    progressInterval.current = null;
-    setPressProgress(0);
-  };
-
   return (
-    <header className="clinic-header no-print bg-slate-800 text-white p-4 shadow-md shrink-0 flex items-center rounded-t-2xl">
-      {/* Left Section: Back Button & Status */}
-      <div className="flex-1 flex justify-start items-center gap-4">
-          {showBackButton && (
-            <button onClick={onBack} className="text-white hover:bg-white/10 rounded-full p-2 transition-colors">
+    <header className="no-print sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 text-slate-800 h-14 shrink-0 flex items-center justify-between px-4 transition-all">
+      {/* Left Section: Back Button */}
+      <div className="w-20 flex justify-start">
+          {showBackButton ? (
+            <button 
+                onClick={onBack} 
+                className="group flex items-center gap-1 text-blue-600 hover:opacity-70 transition-opacity"
+            >
                 <ArrowLeftIcon />
+                <span className="font-medium text-[17px]">Back</span>
             </button>
-          )}
-          {isOnline ? (
-              <span className="flex items-center gap-1.5 text-green-300 bg-black/20 px-2.5 py-1 rounded-full text-xs font-semibold">
-                  <WifiIcon /> Online
-              </span>
           ) : (
-              <span className="flex items-center gap-1.5 text-slate-400 bg-black/20 px-2.5 py-1 rounded-full text-xs font-semibold">
-                  <WifiOffIcon /> Offline
-              </span>
+              // Status Indicator when on Home
+             <div className={`flex items-center justify-center w-8 h-8 rounded-full ${isOnline ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                {isOnline ? <WifiIcon /> : <WifiOffIcon />}
+             </div>
           )}
       </div>
 
       {/* Center Section: Title */}
-      <div className="flex-shrink-0 text-center mx-4">
-        <h1 className="clinic-name text-lg font-bold tracking-wide">ANVIKSHA AI</h1>
+      <div className="flex-1 text-center">
+        <h1 className="text-[17px] font-semibold tracking-tight text-slate-900">
+            {currentScreen === 'welcome' ? 'Anviksha AI' : 
+             currentScreen.charAt(0).toUpperCase() + currentScreen.slice(1).replace('-', ' ')}
+        </h1>
       </div>
 
-      {/* Right Section: Emergency Exit */}
-      <div className="flex-1 flex justify-end">
-        <button 
-          onMouseDown={handlePressStart}
-          onMouseUp={handlePressEnd}
-          onMouseLeave={handlePressEnd}
-          onTouchStart={handlePressStart}
-          onTouchEnd={handlePressEnd}
-          className="emergency-exit relative bg-white/10 hover:bg-white/20 transition-colors text-white px-3 py-2 rounded-full text-xs font-semibold select-none overflow-hidden"
-          style={{ touchAction: 'none' }}
-        >
-          <span 
-            className="absolute top-0 left-0 h-full bg-red-500/60"
-            style={{ width: `${pressProgress}%`, transition: pressProgress > 0 ? 'width 0.1s linear' : 'none' }}
-          ></span>
-          <span className="relative z-10">
-              {pressProgress > 0 ? 'Hold...' : 'Exit'}
-          </span>
-        </button>
+      {/* Right Section: Balance */}
+      <div className="w-20 flex justify-end">
+          {/* Placeholder for future right-side actions */}
       </div>
     </header>
   );

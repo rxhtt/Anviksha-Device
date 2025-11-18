@@ -1,3 +1,4 @@
+
 // aiManager.js - Manages cloud-based AI analysis via Gemini
 // This is the single source of truth for all AI interactions.
 
@@ -47,16 +48,36 @@ const getDemoResult = () => {
   });
 };
 
+/**
+ * Returns a mock triage result for demo mode.
+ */
+const getDemoTriageResult = () => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve({
+                riskScore: 85,
+                recommendation: 'GET_XRAY',
+                reasoning: 'Patient exhibits high-risk symptoms including persistent productive cough (3+ weeks), difficulty breathing, and visible signs of respiratory distress (pale skin). These are strong indicators of Pneumonia or Tuberculosis.',
+                urgencyLabel: '🚨 High Probability of Serious Condition'
+            });
+        }, 2000);
+    });
+}
+
 class AIManager {
-    #apiKey;
-    #aiClient;
+    _apiKey;
+    _aiClient;
 
     /**
+     * Initializes the AIManager with a user-provided API key.
      * @param {string | null} apiKey The Gemini API key.
      */
     constructor(apiKey) {
-        this.#apiKey = apiKey;
-        this.#aiClient = null;
+        if (!apiKey) {
+            console.warn("AIManager initialized without an API key.");
+        }
+        this._apiKey = apiKey;
+        this._aiClient = null; // Lazy initialization
     }
 
     /**
@@ -65,34 +86,114 @@ class AIManager {
      * @private
      * @returns {GoogleGenAI} The initialized AI client.
      */
-    #getAiClient() {
-        if (this.#aiClient) {
-            return this.#aiClient;
+    _getAiClient() {
+        if (this._aiClient) {
+            return this._aiClient;
         }
-        if (!this.#apiKey) {
-            throw new Error('API Key is not configured. Please set it in the Settings screen.');
+        if (!this._apiKey) {
+            throw new Error('API Key is not configured. Please set it in the settings.');
         }
-        this.#aiClient = new GoogleGenAI({ apiKey: this.#apiKey });
-        return this.#aiClient;
+        this._aiClient = new GoogleGenAI({ apiKey: this._apiKey });
+        return this._aiClient;
+    }
+    
+    /**
+     * Verifies if a given API key is valid by making a simple test call.
+     * @param {string} apiKey The API key to verify.
+     * @returns {Promise<boolean>} True if the key is valid, false otherwise.
+     */
+    static async verifyApiKey(apiKey) {
+        if (!apiKey) return false;
+        try {
+            const ai = new GoogleGenAI({ apiKey });
+            // A simple, low-cost model and prompt to verify the key.
+            await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+            return true;
+        } catch (error) {
+            console.error("API Key verification failed:", error);
+            return false;
+        }
     }
 
     /**
-     * Verifies if the current API key is valid by making a lightweight request.
-     * Throws an error if the key is invalid or the request fails.
+     * Analyzes symptoms and optional visual observation to decide if X-ray is needed.
+     * @param {object} triageInputs 
+     * @param {boolean} isDemoMode 
      */
-    async verifyApiKey() {
-      try {
-        // This is a lightweight call to check if the key is valid.
-        // It uses the fast and efficient gemini-2.5-flash model.
-        const geminiAI = this.#getAiClient();
-        await geminiAI.models.generateContent({model: 'gemini-2.5-flash', contents: 'test'});
-      } catch (error) {
-         console.error('API Key validation failed:', error);
-         if (error.message.includes('API key not valid')) {
-             throw new Error('The provided API Key is invalid. Please check and try again.');
-         }
-         throw new Error('Could not verify API key. Check your network connection or the key itself.');
-      }
+    async performTriage(triageInputs, isDemoMode = false) {
+        if (isDemoMode) return getDemoTriageResult();
+        if (!this._apiKey) throw new Error("API Key not configured.");
+
+        try {
+            const geminiAI = this._getAiClient();
+            const parts = [];
+
+            // Add visual evidence if available
+            if (triageInputs.visualObservation) {
+                const imagePart = await fileToGenerativePart(triageInputs.visualObservation);
+                parts.push(imagePart);
+            }
+
+            // Construct the textual prompt
+            let symptomDescription = `
+            Patient Symptoms:
+            - Cough Duration: ${triageInputs.coughDuration}
+            - Fever: ${triageInputs.fever ? 'Yes' : 'No'}
+            - Chest Pain: ${triageInputs.chestPain ? 'Yes' : 'No'}
+            - Difficulty Breathing: ${triageInputs.breathingDifficulty ? 'Yes' : 'No'}
+            - Bloody Sputum: ${triageInputs.sputum ? 'Yes' : 'No'}
+            - Weight Loss: ${triageInputs.weightLoss ? 'Yes' : 'No'}
+            `;
+
+            const prompt = `
+            ${symptomDescription}
+
+            You are a strict medical triage AI. Your goal is to determine if this patient needs a Chest X-Ray based on their symptoms and visual appearance (if provided).
+            
+            Use this logic:
+            1. Calculate a Risk Score (0-100) for serious lung pathologies (TB, Pneumonia, COPD, Lung Cancer).
+            2. Determine Recommendation:
+               - Score > 70: 'GET_XRAY' (Immediate need)
+               - Score > 40: 'CONSIDER_XRAY' (Monitor or investigate if symptoms persist)
+               - Score <= 40: 'NO_XRAY' (Likely minor/viral, home care)
+            
+            If an image is provided, look for visual signs of respiratory distress (tripoding, pallor, sweating, accessory muscle use) to increase the risk score.
+
+            Output STRICT JSON:
+            {
+                "riskScore": number,
+                "recommendation": "GET_XRAY" | "CONSIDER_XRAY" | "NO_XRAY",
+                "reasoning": "string (max 2 sentences)",
+                "urgencyLabel": "string (short headline like 'High Probability of Pneumonia')"
+            }
+            `;
+
+            parts.push({ text: prompt });
+
+            const response = await geminiAI.models.generateContent({
+                model: 'gemini-2.5-flash', // Flash is sufficient for triage text/visual
+                contents: { parts },
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            riskScore: { type: Type.INTEGER },
+                            recommendation: { type: Type.STRING, enum: ["GET_XRAY", "CONSIDER_XRAY", "NO_XRAY"] },
+                            reasoning: { type: Type.STRING },
+                            urgencyLabel: { type: Type.STRING }
+                        },
+                        required: ["riskScore", "recommendation", "reasoning", "urgencyLabel"]
+                    }
+                }
+            });
+            
+            return JSON.parse(response.text.trim());
+
+        } catch (error) {
+            console.error("Triage error:", error);
+            throw new Error("Failed to perform triage analysis.");
+        }
     }
 
     /**
@@ -101,9 +202,9 @@ class AIManager {
      * @param {File} imageFile The X-ray image file.
      * @returns {Promise<object>} The analysis result from the API.
      */
-    async #performCloudAnalysis(imageFile) {
+    async _performCloudAnalysis(imageFile) {
         try {
-            const geminiAI = this.#getAiClient();
+            const geminiAI = this._getAiClient();
             const imagePart = await fileToGenerativePart(imageFile);
             
             const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
@@ -154,8 +255,7 @@ The JSON object must have these exact keys:
             });
 
             const jsonText = response.text.trim();
-            const cleanJsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '');
-            const result = JSON.parse(cleanJsonText);
+            const result = JSON.parse(jsonText);
             
             return {
                 ...result,
@@ -168,7 +268,7 @@ The JSON object must have these exact keys:
             let message = 'Failed to get analysis from AI service.';
             if (error instanceof Error) {
                 if(error.message.toLowerCase().includes('api key')) {
-                    message = 'AI Service failed: The provided API Key is invalid or expired.';
+                    message = 'AI Service failed: The API Key is invalid or has insufficient permissions.';
                 } else if (error instanceof SyntaxError || error.message.includes('json')) {
                     message = 'AI Service returned an invalid format. Could not parse the response.';
                 } else {
@@ -191,12 +291,16 @@ The JSON object must have these exact keys:
             return getDemoResult();
         }
 
+        if (!this._apiKey) {
+            throw new Error("Cannot perform analysis. The API Key is not configured.");
+        }
+
         if (!navigator.onLine) {
             console.error('Offline: Cannot perform cloud analysis.');
             throw new Error('An internet connection is required for AI analysis. Please connect to a network and try again.');
         }
 
-        return await this.#performCloudAnalysis(imageFile);
+        return await this._performCloudAnalysis(imageFile);
     }
 }
 

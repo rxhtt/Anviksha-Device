@@ -1,15 +1,17 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import Header from './components/Header';
-import WelcomeScreen from './components/WelcomeScreen';
-import CameraScreen from './components/CameraScreen';
-import AnalysisScreen from './components/AnalysisScreen';
-import ResultsScreen from './components/ResultsScreen';
-import RecordsScreen from './components/RecordsScreen';
-import DetailsScreen from './components/DetailsScreen';
-import SettingsScreen from './components/SettingsScreen';
-import ExitModal from './components/ExitModal';
+
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import Header from './components/Header.tsx';
+import WelcomeScreen from './components/WelcomeScreen.tsx';
+import CameraScreen from './components/CameraScreen.tsx';
+import AnalysisScreen from './components/AnalysisScreen.tsx';
+import ResultsScreen from './components/ResultsScreen.tsx';
+import RecordsScreen from './components/RecordsScreen.tsx';
+import DetailsScreen from './components/DetailsScreen.tsx';
+import SettingsScreen from './components/SettingsScreen.tsx';
+import TriageScreen from './components/TriageScreen.tsx';
+import TriageResultScreen from './components/TriageResultScreen.tsx';
 import AIManager from './services/aiManager.js';
-import type { Screen, AnalysisResult, ApiKeyStatus } from './types';
+import type { Screen, AnalysisResult, ApiKeyStatus, TriageInputs, TriageResult } from './types.ts';
 
 // Helper to normalize results from the AI service
 const normalizeAiResult = (data: any): Omit<AnalysisResult, 'id' | 'date'> => {
@@ -29,8 +31,8 @@ const normalizeAiResult = (data: any): Omit<AnalysisResult, 'id' | 'date'> => {
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [triageResult, setTriageResult] = useState<TriageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [patientRecords, setPatientRecords] = useState<AnalysisResult[]>(() => {
@@ -48,18 +50,17 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(() => window.localStorage.getItem('geminiApiKey'));
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>('untested');
 
-  // Instantiate AIManager with the current API key
-  const aiManager = new AIManager(apiKey);
+  const aiManager = useMemo(() => new AIManager(apiKey), [apiKey]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
-    // Test the key on initial load if it exists
-    if(apiKey) {
-      handleTestApiKey(apiKey);
+
+    // Initial API Key Check
+    if (apiKey) {
+      handleTestApiKey(apiKey, true);
     } else {
       setApiKeyStatus('not_configured');
     }
@@ -68,7 +69,7 @@ const App: React.FC = () => {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -79,37 +80,11 @@ const App: React.FC = () => {
     }
   }, [patientRecords]);
 
-  const handleUpdateApiKey = async (newKey: string): Promise<boolean> => {
-    window.localStorage.setItem('geminiApiKey', newKey);
-    setApiKey(newKey);
-    return await handleTestApiKey(newKey);
-  };
-
-  const handleTestApiKey = async (keyToTest: string): Promise<boolean> => {
-    setApiKeyStatus('testing');
-    const testManager = new AIManager(keyToTest);
-    try {
-      await testManager.verifyApiKey();
-      setApiKeyStatus('valid');
-      return true;
-    } catch (err) {
-      setApiKeyStatus('invalid');
-      console.error(err);
-      return false;
-    }
-  };
-  
-  const handleClearApiKey = () => {
-    window.localStorage.removeItem('geminiApiKey');
-    setApiKey(null);
-    setApiKeyStatus('not_configured');
-  };
-
   const handleStartScan = (file: File) => {
-    if (apiKeyStatus !== 'valid' && !isDemoMode) {
-      setError("A valid API key is required for analysis. Please configure it in the Settings screen.");
-      setCurrentScreen('camera');
-      return;
+    if (apiKeyStatus !== 'valid') {
+        alert('Please configure a valid API key in Settings before running an analysis.');
+        setCurrentScreen('settings');
+        return;
     }
     setImageFile(file);
     setCurrentScreen('analysis');
@@ -117,11 +92,12 @@ const App: React.FC = () => {
   
   const handleStartDemo = () => {
     setIsDemoMode(true);
-    setCurrentScreen('camera');
+    setCurrentScreen('triage'); // Start Demo flow at Triage now
   };
 
   const handleNewAnalysis = () => {
     setAnalysisResult(null);
+    setTriageResult(null);
     setError(null);
     setImageFile(null);
     setViewingRecordId(null);
@@ -147,13 +123,64 @@ const App: React.FC = () => {
     setViewingRecordId(null);
     setCurrentScreen('records');
   };
+  
+  const handleUpdateApiKey = async (newKey: string) => {
+    const isValid = await handleTestApiKey(newKey);
+    if (isValid) {
+      setApiKey(newKey);
+      window.localStorage.setItem('geminiApiKey', newKey);
+    }
+    return isValid;
+  };
+
+  const handleTestApiKey = async (keyToTest: string, isInitialLoad = false) => {
+    if (!keyToTest) {
+      setApiKeyStatus('not_configured');
+      return false;
+    }
+    setApiKeyStatus('testing');
+    const isValid = await AIManager.verifyApiKey(keyToTest);
+    setApiKeyStatus(isValid ? 'valid' : 'invalid');
+    if (!isValid && !isInitialLoad) {
+      alert('The provided API Key appears to be invalid. Please check it and try again.');
+    }
+    return isValid;
+  };
+
+  const handleClearApiKey = () => {
+    setApiKey(null);
+    setApiKeyStatus('not_configured');
+    window.localStorage.removeItem('geminiApiKey');
+    alert('API Key cleared.');
+  };
 
   const handleBack = () => {
     setError(null);
     if (currentScreen === 'results' && viewingRecordId) {
       handleReturnToRecords();
-    } else if (['camera', 'records', 'details', 'settings'].includes(currentScreen)) {
+    } else if (['camera', 'records', 'details', 'settings', 'triage'].includes(currentScreen)) {
       setCurrentScreen('welcome');
+    } else if (currentScreen === 'triage-results') {
+      setCurrentScreen('triage');
+    }
+  };
+
+  const runTriage = async (inputs: TriageInputs) => {
+    if (apiKeyStatus !== 'valid' && !isDemoMode) {
+         alert('Please configure a valid API key in Settings.');
+         return;
+    }
+
+    setIsLoading(true);
+    try {
+        const result = await aiManager.performTriage(inputs, isDemoMode);
+        setTriageResult(result);
+        setCurrentScreen('triage-results');
+    } catch (err) {
+        console.error("Triage failed", err);
+        alert("Triage analysis failed. Please check network and API Key.");
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -175,7 +202,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Analysis failed:", err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(`Analysis failed: ${errorMessage}. Please try again or check your API Key in Settings.`);
+      setError(`Analysis failed: ${errorMessage}. Please check your connection and API Key, then try again.`);
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
@@ -192,7 +219,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const preventDefault = (e: Event) => e.preventDefault();
     document.addEventListener('contextmenu', preventDefault);
-    if (currentScreen !== 'results' && currentScreen !== 'settings') {
+    if (currentScreen !== 'results' && currentScreen !== 'triage-results') {
       document.addEventListener('selectstart', preventDefault);
     }
     return () => {
@@ -208,6 +235,10 @@ const App: React.FC = () => {
     }
 
     switch (currentScreen) {
+      case 'triage':
+        return <TriageScreen onSubmit={runTriage} onBack={handleBack} isLoading={isLoading} />;
+      case 'triage-results':
+        return triageResult && <TriageResultScreen result={triageResult} onProceedToXRay={() => setCurrentScreen('camera')} onBack={() => setCurrentScreen('welcome')} />;
       case 'camera':
         return <CameraScreen onStartScan={handleStartScan} error={error} isDemoMode={isDemoMode} onBackToHome={handleBack} />;
       case 'analysis':
@@ -219,13 +250,13 @@ const App: React.FC = () => {
       case 'details':
         return <DetailsScreen onBack={handleBack} />;
       case 'settings':
-        return <SettingsScreen
+        return <SettingsScreen 
                   apiKey={apiKey}
                   apiKeyStatus={apiKeyStatus}
                   onUpdateApiKey={handleUpdateApiKey}
                   onTestApiKey={handleTestApiKey}
                   onClearApiKey={handleClearApiKey}
-                  onBack={handleBack}
+                  onBack={handleBack} 
                 />;
       case 'welcome':
       default:
@@ -233,6 +264,7 @@ const App: React.FC = () => {
                   onStartCamera={() => setCurrentScreen('camera')}
                   onStartScan={handleStartScan}
                   onStartDemo={handleStartDemo} 
+                  onStartTriage={() => setCurrentScreen('triage')}
                   onShowRecords={() => setCurrentScreen('records')}
                   onShowDetails={() => setCurrentScreen('details')}
                   onShowSettings={() => setCurrentScreen('settings')}
@@ -242,21 +274,25 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 h-screen w-screen overflow-hidden touch-manipulation">
-      <div className="kiosk-container h-full max-w-lg mx-auto flex flex-col bg-white shadow-2xl rounded-2xl">
+    <div className="bg-slate-100 h-screen w-screen flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+      <div className="relative h-full w-full sm:max-w-[430px] sm:h-[92vh] bg-white shadow-2xl sm:rounded-[2.5rem] overflow-hidden flex flex-col border border-slate-200/60 ring-8 ring-slate-900/5">
         <Header 
-            onEmergencyExit={() => setIsExitModalOpen(true)} 
             isOnline={isOnline}
             currentScreen={currentScreen}
             onBack={handleBack}
         />
-        <main className="main-content flex-1 p-6 overflow-y-auto">
-          <div key={currentScreen} className={`screen-container ${currentScreen === 'results' ? 'printable-area' : ''}`}>
+        <main className="main-content flex-1 p-5 overflow-y-auto bg-slate-50/50 scroll-smooth">
+          <div key={currentScreen} className={`screen-container min-h-full flex flex-col ${currentScreen === 'results' || currentScreen === 'triage-results' ? 'printable-area' : ''}`}>
             {renderScreen()}
           </div>
         </main>
+        {/* Bottom Indicator for Mobile feel */}
+        {currentScreen !== 'camera' && (
+          <div className="absolute bottom-1 left-0 right-0 flex justify-center pointer-events-none">
+            <div className="w-32 h-1 bg-slate-200 rounded-full mb-2"></div>
+          </div>
+        )}
       </div>
-      <ExitModal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)} />
     </div>
   );
 };

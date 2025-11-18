@@ -1,8 +1,9 @@
+
 import React from 'react';
 
 export const StethoscopeIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.25 9.125a3.125 3.125 0 013.125-3.125h.75c1.724 0 3.125 1.401 3.125 3.125v3.375c0 .352.176.684.471.884l2.153 1.435c.441.294.751.783.751 1.331v2.125a2.5 2.5 0 01-2.5 2.5h-8.5a2.5 2.5 0 01-2.5-2.5v-2.125c0-.548.31-1.037.75-1.33l2.15-1.436a1.06 1.06 0 00.47-.884v-3.375z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.25 9.125a3.125 3.125 0 013.125-3.125h.75c1.724 0 3.125 1.401 3.125 3.125v3.375c0 .352.176.684.471.884l2.153 1.435c.441.294.751.783.751 1.331v2.125a2.5 2.5 0 01-2.5 2.5h-8.5a2.5 2.5 0 01-2.5 2.5v-2.125c0-.548.31-1.037.75-1.33l2.15-1.436a1.06 1.06 0 00.47-.884v-3.375z" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 6.375c0-1.724 1.401-3.125 3.125-3.125h.75a3.125 3.125 0 013.125 3.125v3.375c0 .352.176.684.471.884l2.153 1.435c.441.294.751.783.751 1.331v2.125a2.5 2.5 0 01-2.5 2.5" />
     <circle cx="5.5" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.5" />
     <circle cx="18.5" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.5" />
@@ -164,6 +165,30 @@ export const SettingsIcon: React.FC = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
+);
+
+export const TriageIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+);
+
+export const ChecklistIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+export const UserIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+);
+
+export const AlertIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
 );
 
 

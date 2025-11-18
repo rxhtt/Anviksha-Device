@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadIcon, CameraIcon, ShutterIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon } from './IconComponents';
+import { UploadIcon, CameraIcon, ShutterIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon } from './IconComponents.tsx';
 
 interface CameraScreenProps {
   onStartScan: (file: File) => void;
@@ -7,26 +8,6 @@ interface CameraScreenProps {
   isDemoMode?: boolean;
   onBackToHome?: () => void;
 }
-
-const CameraPermissionDenied: React.FC<{ onUploadClick: () => void }> = ({ onUploadClick }) => (
-    <div className="flex flex-col items-center justify-center text-center bg-slate-100 p-6 rounded-2xl h-full">
-        <div className="text-6xl text-red-500 mb-4">
-            <CameraOffIcon />
-        </div>
-        <h3 className="text-xl font-bold text-slate-800">Camera Access Denied</h3>
-        <p className="text-slate-600 mt-2 mb-6 max-w-sm">
-            To capture an X-ray live, this app needs camera access. Please enable camera permissions for this site in your browser's settings and refresh the page.
-        </p>
-        <p className="text-slate-500 mb-4 text-sm">Alternatively, you can upload an image from your device.</p>
-        <button
-            onClick={onUploadClick}
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-full text-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95"
-        >
-            <UploadIcon /> Upload Image File
-        </button>
-    </div>
-);
-
 
 const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoMode = false, onBackToHome }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -41,30 +22,16 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
     let stream: MediaStream | null = null;
     const enableCamera = async () => {
       try {
-        if (navigator.permissions && navigator.permissions.query) {
-            const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-            if (permissionStatus.state === 'denied') {
-                setCameraError("Camera permission was denied. Please enable it in your browser settings.");
-                return;
-            }
-        }
-
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          setCameraError("This browser does not support camera access.");
-          return;
-        }
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+        });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setCameraError(null);
         }
       } catch (err) {
         console.error("Camera access error:", err);
-        if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-             setCameraError("Camera permission was denied. Please enable it in your browser settings.");
-        } else {
-            setCameraError("Could not access camera. It may be in use by another application.");
-        }
+        setCameraError("Camera unavailable. Please use upload.");
       }
     };
     
@@ -92,12 +59,13 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
         setIsCapturing(true);
+        // Simulate shutter lag for realism
         setTimeout(() => {
             const video = videoRef.current!;
             const canvas = canvasRef.current!;
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            canvas.getContext('2d')?.drawImage(video, 0, 0);
             canvas.toBlob(blob => {
                 if (blob) {
                     const capturedFile = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
@@ -105,8 +73,8 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
                     setImagePreview(URL.createObjectURL(capturedFile));
                 }
                 setIsCapturing(false);
-            }, 'image/jpeg');
-        }, 100);
+            }, 'image/jpeg', 0.95);
+        }, 150);
     }
   };
   
@@ -116,108 +84,96 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
   }
 
   const handleScan = () => {
-    if (file) {
-      onStartScan(file);
-    }
+    if (file) onStartScan(file);
   };
 
-  if (cameraError && !imagePreview) {
-    return (
-      <div className="text-center flex flex-col h-full">
-          <h2 className="text-2xl font-bold text-slate-800">Camera Unavailable</h2>
-          <p className="text-slate-500 mb-4">Live capture requires camera permission.</p>
-          <div className="flex-grow my-4">
-              <CameraPermissionDenied onUploadClick={() => fileInputRef.current?.click()} />
-          </div>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-      </div>
-    );
-  }
-
-  const hasLiveFeed = !cameraError && !imagePreview;
-
   return (
-    <div className="text-center flex flex-col h-full">
+    <div className="flex flex-col h-full bg-black text-white -m-5 rounded-none sm:rounded-[2.5rem] overflow-hidden relative">
       {isDemoMode && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-4 text-left" role="alert">
-              <p className="font-bold">Demo Mode</p>
-              <p className="text-sm">You are in Demo Mode. The analysis will be simulated using sample data, and the result cannot be saved to patient records.</p>
+          <div className="absolute top-4 left-4 right-4 z-20 bg-yellow-400/90 text-black text-xs font-bold px-3 py-2 rounded-full text-center backdrop-blur-md">
+              Demo Mode Active
           </div>
       )}
-      <h2 className="text-2xl font-bold text-slate-800">Position Chest X-ray</h2>
-      <p className="text-slate-500 mb-4">{hasLiveFeed ? 'Capture the X-ray image using the camera.' : 'Review the image or upload another.'}</p>
-      
-      {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg my-4">{error}</p>}
-      
-      <div className="camera-preview flex-grow w-full bg-slate-900 rounded-2xl my-4 flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-300 overflow-hidden relative">
-        {imagePreview && <img src={imagePreview} alt="X-ray preview" className="object-contain h-full w-full" />}
-        {hasLiveFeed && <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover"></video>}
-        {hasLiveFeed && (
-             <div className="absolute inset-0 border-8 border-white/50 rounded-2xl m-4 pointer-events-none"></div>
-        )}
-        {!hasLiveFeed && !imagePreview && (
-            <div className="flex flex-col items-center text-slate-400 p-4">
-                <CameraOffIcon />
-                <span className="mt-2 text-sm">Live camera unavailable.</span>
-            </div>
+
+      {/* Viewfinder Area */}
+      <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+        {imagePreview ? (
+            <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
+        ) : (
+            <>
+                {cameraError ? (
+                    <div className="flex flex-col items-center text-slate-500">
+                        <CameraOffIcon />
+                        <span className="mt-2 text-sm">{cameraError}</span>
+                    </div>
+                ) : (
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                )}
+                {/* Grid Overlay */}
+                {!cameraError && !imagePreview && (
+                   <div className="absolute inset-0 pointer-events-none opacity-20">
+                       <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+                           <div className="border-r border-b border-white"></div>
+                           <div className="border-r border-b border-white"></div>
+                           <div className="border-b border-white"></div>
+                           <div className="border-r border-b border-white"></div>
+                           <div className="border-r border-b border-white"></div>
+                           <div className="border-b border-white"></div>
+                           <div className="border-r border-white"></div>
+                           <div className="border-r border-white"></div>
+                           <div></div>
+                       </div>
+                   </div>
+                )}
+            </>
         )}
       </div>
       
       <canvas ref={canvasRef} className="hidden"></canvas>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
 
-      <div className="grid grid-cols-5 gap-4 items-center">
-        {imagePreview ? (
-            <button
-                className="col-span-1 text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold p-3 rounded-full flex items-center justify-center w-full aspect-square transition-colors" 
-                onClick={handleRetake}
-                aria-label="Retake Photo"
-            >
-                <RetakeIcon />
-            </button>
-        ) : (
-            <button 
-                className="col-span-1 text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold p-3 rounded-full flex items-center justify-center w-full aspect-square transition-colors" 
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Upload File"
-            >
-              <UploadIcon />
-            </button>
-        )}
-
-        <div className="col-span-3">
-        {imagePreview ? (
-            <button onClick={handleScan} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-8 rounded-full text-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95">
-                <CameraIcon /> Analyze Image
-            </button>
-        ) : (
-            <button onClick={handleCapture} disabled={!!cameraError || isCapturing} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 px-8 rounded-full text-lg font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95">
-                {isCapturing ? (
-                    <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Capturing...
-                    </>
+      {/* Controls */}
+      <div className="h-48 bg-black/80 backdrop-blur-xl flex flex-col justify-center px-8 pb-6 pt-2">
+         <div className="flex items-center justify-between max-w-md mx-auto w-full">
+            {/* Left Action: Gallery/Retake */}
+            <div>
+                {imagePreview ? (
+                    <button onClick={handleRetake} className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-white hover:bg-slate-700 transition-colors">
+                        <RetakeIcon />
+                    </button>
                 ) : (
-                    <>
-                        <ShutterIcon /> Capture
-                    </>
+                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
+                        <UploadIcon />
+                    </button>
                 )}
-            </button>
-        )}
-        </div>
-        {/* Empty col for spacing */}
-        <div className="col-span-1"></div>
+            </div>
+
+            {/* Center Action: Shutter/Confirm */}
+            <div className="flex items-center justify-center">
+                {imagePreview ? (
+                    <button onClick={handleScan} className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                         <div className="text-black text-2xl"><CameraIcon /></div>
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handleCapture} 
+                        disabled={!!cameraError}
+                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                        <div className="w-16 h-16 bg-white rounded-full group-active:scale-90 transition-transform"></div>
+                    </button>
+                )}
+            </div>
+
+            {/* Right Action: Back */}
+             <div>
+                <button onClick={onBackToHome} className="w-12 h-12 rounded-full bg-transparent flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all">
+                    <ArrowLeftIcon />
+                </button>
+            </div>
+         </div>
+         {imagePreview && <div className="text-center text-white/60 text-xs font-medium mt-4">Review Photo</div>}
       </div>
-      {onBackToHome && (
-        <div className="mt-6 text-center no-print shrink-0">
-          <button
-            onClick={onBackToHome}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-6 rounded-full font-semibold transition-colors flex items-center justify-center gap-2 mx-auto text-sm"
-          >
-            <ArrowLeftIcon /> Back to Home
-          </button>
-        </div>
-      )}
     </div>
   );
 };

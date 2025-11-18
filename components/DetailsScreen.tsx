@@ -1,100 +1,40 @@
+
 import React from 'react';
 import { 
-    ArrowLeftIcon,
     CheckCircleIcon, VirusIcon, LungsIcon, LinesIcon, HeartIcon, DropletIcon, 
     CircleDotIcon, WindIcon, BrokenBoneIcon, StomachIcon 
-} from './IconComponents';
-
-interface DetailsScreenProps {
-  onBack?: () => void; // Optional as it's now handled by header
-}
+} from './IconComponents.tsx';
 
 const conditions = [
-    { name: "Normal", description: "No significant abnormalities detected.", icon: <CheckCircleIcon /> },
-    { name: "Tuberculosis", description: "Bacterial infection causing cavitary lesions.", icon: <VirusIcon /> },
-    { name: "Pneumonia", description: "Lung inflammation causing consolidation.", icon: <LungsIcon /> },
-    { name: "Atelectasis", description: "Partial or complete collapse of a lung section.", icon: <LinesIcon /> },
-    { name: "Cardiomegaly", description: "An enlarged heart, a sign of underlying conditions.", icon: <HeartIcon /> },
-    { name: "Effusion", description: "Excess fluid between the lungs and chest cavity.", icon: <DropletIcon /> },
-    { name: "Nodule/Mass", description: "A localized opacity in the lung requiring follow-up.", icon: <CircleDotIcon /> },
-    { name: "Pneumothorax", description: "A collapsed lung due to air leak in the chest space.", icon: <WindIcon /> },
-    { name: "Fibrosis", description: "Scarring of lung tissue, leading to breathing issues.", icon: <LinesIcon /> },
-    { name: "Edema", description: "Swelling from excess fluid in lung tissues.", icon: <DropletIcon /> },
-    { name: "Consolidation", description: "Lung tissue filled with fluid instead of air.", icon: <LungsIcon /> },
-    { name: "Emphysema", description: "Damaged air sacs causing shortness of breath.", icon: <LungsIcon /> },
-    { name: "Fracture", description: "A break in one or more rib bones.", icon: <BrokenBoneIcon /> },
-    { name: "Hernia", description: "Protrusion of an organ through the diaphragm.", icon: <StomachIcon /> },
-    { name: "Infiltration", description: "Abnormal substance accumulation in lung tissue.", icon: <LungsIcon /> }
+    { name: "Normal", icon: <CheckCircleIcon /> },
+    { name: "Tuberculosis", icon: <VirusIcon /> },
+    { name: "Pneumonia", icon: <LungsIcon /> },
+    { name: "Cardiomegaly", icon: <HeartIcon /> },
+    { name: "Effusion", icon: <DropletIcon /> },
+    { name: "Pneumothorax", icon: <WindIcon /> },
+    { name: "Fracture", icon: <BrokenBoneIcon /> },
+    { name: "Mass", icon: <CircleDotIcon /> },
 ];
 
-const ConditionCard: React.FC<{ name: string, description: string, icon: React.ReactNode }> = ({ name, description, icon }) => (
-    <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex items-start gap-4">
-        <div className="text-3xl text-blue-500 mt-1">
-            {icon}
-        </div>
-        <div>
-            <p className="font-bold text-slate-800">{name}</p>
-            <p className="text-sm text-slate-600 mt-1">{description}</p>
-        </div>
-    </div>
-);
-
-const DetailsScreen: React.FC<DetailsScreenProps> = ({ onBack }) => {
+const DetailsScreen: React.FC<{ onBack?: () => void }> = () => {
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-6 text-center">
-        <h2 className="text-3xl font-bold text-slate-800">App Capabilities</h2>
-        <p className="text-slate-600 mt-2">Our AI is trained to screen for the following conditions.</p>
+      <div className="p-5 bg-slate-900 text-white rounded-3xl shadow-lg shadow-slate-200 mb-6">
+        <h2 className="font-bold text-lg mb-2">Anviksha AI</h2>
+        <p className="text-slate-300 text-sm leading-relaxed">
+            Advanced medical imaging analysis powered by Google Gemini Pro. Designed for rapid triage and assistant diagnostics.
+        </p>
       </div>
 
-      <div className="flex-grow overflow-y-auto pr-2 -mr-2 space-y-6">
-        <div className="p-5 bg-blue-50 rounded-xl border border-blue-200">
-            <h3 className="font-bold text-lg text-slate-800 mb-2">About Anviksha AI</h3>
-            <p className="text-sm text-slate-700">
-                Anviksha AI provides rapid, accessible, and affordable analysis of chest X-rays using state-of-the-art artificial intelligence. Our platform empowers healthcare professionals to make faster, more informed decisions, triage patients effectively, and reduce the time and cost associated with traditional diagnostics.
-            </p>
-            <p className="text-xs text-slate-500 mt-3 font-semibold">
-                <strong>Disclaimer:</strong> This is an assistive screening tool, not a substitute for diagnosis by a qualified medical professional.
-            </p>
-        </div>
-
-         <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {conditions.map((condition) => (
-                    <ConditionCard key={condition.name} {...condition} />
-                ))}
-            </div>
-         </div>
-         
-         <div className="p-5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-            <h3 className="font-bold text-lg text-slate-800 mb-2">Credits & Info</h3>
-            <p className="text-sm text-slate-700">
-                Innovation and Concept by <strong>Rohit Bagewadi</strong>.
-            </p>
-            <p className="text-sm text-slate-700 mt-1">
-                Official Website:{' '}
-                <a 
-                    href="https://anviksha-ai.vercel.app/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 font-semibold hover:underline"
-                >
-                    anviksha-ai.vercel.app
-                </a>
-            </p>
-        </div>
+      <h3 className="text-sm font-bold text-slate-900 px-2 mb-3">Detectable Conditions</h3>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          {conditions.map((c) => (
+              <div key={c.name} className="flex items-center gap-4 p-4 border-b border-slate-50 last:border-0">
+                  <div className="text-blue-500 text-xl">{c.icon}</div>
+                  <span className="font-medium text-slate-700 text-sm">{c.name}</span>
+              </div>
+          ))}
       </div>
-
-      {onBack && (
-        <div className="mt-6 text-center no-print shrink-0">
-          <button
-            onClick={onBack}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-6 rounded-full font-semibold transition-colors flex items-center justify-center gap-2 mx-auto text-sm"
-          >
-            <ArrowLeftIcon /> Back to Home
-          </button>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import type { AnalysisResult } from '../types';
-import { SyncIcon, RecordsIcon, SearchIcon, ArrowLeftIcon, InfoIcon } from './IconComponents';
+import type { AnalysisResult } from '../types.ts';
+import { SyncIcon, RecordsIcon, SearchIcon, ArrowLeftIcon, InfoIcon } from './IconComponents.tsx';
 
 interface RecordsScreenProps {
   records: AnalysisResult[];
@@ -9,143 +10,54 @@ interface RecordsScreenProps {
 }
 
 const RecordCard: React.FC<{ record: AnalysisResult, onViewRecord: (id: string) => void }> = ({ record, onViewRecord }) => {
-    const isEmergency = record.isEmergency;
-    const cardBorderColor = isEmergency ? 'border-red-500' : 'border-green-500';
-    
     return (
         <button 
             onClick={() => onViewRecord(record.id)}
-            className={`w-full text-left p-4 rounded-xl bg-white border-l-4 ${cardBorderColor} shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5`}>
-            <div className="flex justify-between items-start">
-                <p className={`font-bold text-lg ${isEmergency ? 'text-red-600' : 'text-slate-800'}`}>{record.condition}</p>
-                <p className="text-xs text-slate-500 flex-shrink-0 ml-2">{new Date(record.date).toLocaleString()}</p>
+            className="w-full bg-white p-4 flex items-center justify-between border-b border-slate-50 hover:bg-slate-50 transition-colors group first:rounded-t-2xl last:rounded-b-2xl last:border-0"
+        >
+            <div className="flex flex-col items-start text-left">
+                <span className="font-bold text-slate-900 text-[15px]">{record.condition}</span>
+                <span className="text-xs text-slate-400 mt-0.5">{new Date(record.date).toLocaleDateString()} • {record.confidence}% Match</span>
             </div>
-            <p className="text-sm text-slate-600 mt-1">Confidence: {record.confidence}%</p>
-            <p className="text-sm text-slate-500 mt-2 truncate">
-                Findings: {record.description}
-            </p>
+            <div className={`w-2 h-2 rounded-full ${record.isEmergency ? 'bg-red-500' : 'bg-emerald-400'}`}></div>
         </button>
     )
 }
 
 const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, onBackToHome }) => {
-    const [isSyncing, setIsSyncing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'condition-asc' | 'confidence-desc'>('date-desc');
 
-    const handleSync = () => {
-        setIsSyncing(true);
-        setTimeout(() => {
-            setIsSyncing(false);
-            alert('Patient records have been securely synced with the central health database.');
-        }, 2000);
-    };
-
-    const filteredAndSortedRecords = records
-    .filter(record => {
-        const query = searchQuery.toLowerCase();
-        if (!query) return true;
-        return (
-            record.condition.toLowerCase().includes(query) ||
-            record.description.toLowerCase().includes(query) ||
-            new Date(record.date).toLocaleDateString().includes(query)
-        );
-    })
-    .sort((a, b) => {
-        switch (sortBy) {
-            case 'date-asc':
-                return new Date(a.date).getTime() - new Date(b.date).getTime();
-            case 'condition-asc':
-                return a.condition.localeCompare(b.condition);
-            case 'confidence-desc':
-                return b.confidence - a.confidence;
-            case 'date-desc':
-            default:
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-        }
-    });
-
+    const filteredRecords = records.filter(record => 
+        record.condition.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-3xl font-bold text-slate-800">Patient Records</h2>
-        <button 
-            onClick={handleSync}
-            disabled={isSyncing || records.length === 0}
-            className="bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-full flex items-center gap-2 text-sm transition-colors hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed">
-            {isSyncing ? (
-                <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
-                    Syncing...
-                </>
-            ) : (
-                <>
-                    <SyncIcon /> Sync Records
-                </>
-            )}
-        </button>
-      </div>
-      
-      <div className="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-lg mb-4 flex items-center gap-2">
-        <InfoIcon />
-        <span>Records are stored securely on this device and are available offline.</span>
-      </div>
+       <div className="mb-6">
+           <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
+                <input 
+                    type="text"
+                    placeholder="Search records"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-100 rounded-xl text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+           </div>
+       </div>
 
-       <div className="mb-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-grow">
-            <input 
-                type="text"
-                placeholder="Search by condition, date..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-full focus:ring-2 focus:ring-blue-400 outline-none transition"
-            />
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                <SearchIcon />
-            </div>
-        </div>
-        <select 
-            value={sortBy} 
-            onChange={e => setSortBy(e.target.value as any)}
-            className="px-4 py-2.5 border border-slate-300 rounded-full bg-white focus:ring-2 focus:ring-blue-400 outline-none appearance-none transition"
-        >
-            <option value="date-desc">Newest First</option>
-            <option value="date-asc">Oldest First</option>
-            <option value="condition-asc">By Condition</option>
-            <option value="confidence-desc">By Confidence</option>
-        </select>
-      </div>
-
-      <div className="flex-grow overflow-y-auto space-y-3 pr-2 -mr-2">
-        {filteredAndSortedRecords.length > 0 ? (
-          filteredAndSortedRecords.map(rec => <RecordCard key={rec.id} record={rec} onViewRecord={onViewRecord} />)
-        ) : (
-          <div className="text-center text-slate-500 h-full flex flex-col items-center justify-center">
-            <div className="text-5xl mb-4">
-              <RecordsIcon />
-            </div>
-            <p className="font-semibold text-lg">{searchQuery ? 'No Matching Records' : 'No Records Found'}</p>
-            <p className="text-sm mt-1 max-w-xs">
-                {searchQuery 
-                    ? 'Try a different search term.' 
-                    : 'Perform a new analysis and save the result. It will appear here for future reference.'
-                }
-            </p>
-          </div>
-        )}
-      </div>
-
-      {onBackToHome && (
-        <div className="mt-6 text-center no-print shrink-0">
-          <button
-            onClick={onBackToHome}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-6 rounded-full font-semibold transition-colors flex items-center justify-center gap-2 mx-auto text-sm"
-          >
-            <ArrowLeftIcon /> Back to Home
-          </button>
-        </div>
-      )}
+       <div className="flex-1 overflow-y-auto">
+         {filteredRecords.length > 0 ? (
+             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                 {filteredRecords.map(rec => <RecordCard key={rec.id} record={rec} onViewRecord={onViewRecord} />)}
+             </div>
+         ) : (
+             <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+                 <div className="text-4xl mb-2 opacity-20"><RecordsIcon /></div>
+                 <p className="text-sm font-medium">No records found</p>
+             </div>
+         )}
+       </div>
     </div>
   );
 };
