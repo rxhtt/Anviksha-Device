@@ -15,11 +15,11 @@ const getAiClient = () => {
     if (ai) {
         return ai;
     }
-    // The API key is expected to be injected by the execution environment (e.g., Vercel).
-    if (!process.env.API_KEY) {
-        throw new Error('API Key is not configured. Please set the API_KEY environment variable for your deployment.');
+    // For Vercel deployments, environment variables must be prefixed with NEXT_PUBLIC_ to be exposed to the browser.
+    if (!process.env.NEXT_PUBLIC_API_KEY) {
+        throw new Error('API Key is not configured. Please set the NEXT_PUBLIC_API_KEY environment variable for your Vercel deployment.');
     }
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_API_KEY });
     return ai;
 };
 
@@ -119,8 +119,8 @@ The JSON object must have these exact keys:
     console.error('Error analyzing X-ray with Gemini API:', error);
     let message = 'Failed to get analysis from AI service.';
     if (error instanceof Error) {
-        if(error.message.includes('API key')) {
-            message = 'AI Service failed: The API Key is missing or invalid. Please check your configuration.';
+        if(error.message.includes('API key') || error.message.includes('API Key')) {
+            message = 'AI Service failed: The API Key is missing, invalid, or not correctly configured for this deployment.';
         } else if (error instanceof SyntaxError || error.message.includes('JSON')) {
             message = 'AI Service returned an invalid format. Could not parse the response.';
         } else {
