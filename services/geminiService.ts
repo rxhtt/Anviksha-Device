@@ -1,8 +1,28 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { AnalysisResult } from '../types';
 
-// Fix: Use process.env.API_KEY as per the guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+/**
+ * Initializes and returns the GoogleGenAI client instance.
+ * This function uses a singleton pattern to ensure the client is created only once.
+ * It should only be called after verifying the API key exists.
+ * @returns {GoogleGenAI} The initialized AI client.
+ */
+const getAiClient = (): GoogleGenAI => {
+    if (ai) {
+        return ai;
+    }
+    // FIX: Cast import.meta to any to access env property without TypeScript errors.
+    const apiKey = (import.meta as any).env.VITE_API_KEY;
+    if (!apiKey) {
+        // This check is a safeguard. The main App component should prevent this from being called without a key.
+        throw new Error("VITE_API_KEY is not set. Cannot initialize Gemini AI client.");
+    }
+    ai = new GoogleGenAI({ apiKey });
+    return ai;
+};
+
 
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -21,6 +41,7 @@ const fileToGenerativePart = async (file: File) => {
 
 export const analyzeXRay = async (imageFile: File): Promise<AnalysisResult> => {
   try {
+    const geminiAI = getAiClient(); // Get or initialize the AI client safely
     const imagePart = await fileToGenerativePart(imageFile);
     
     const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
@@ -45,7 +66,7 @@ The JSON object must have these exact keys:
 - 'treatment': (string) A general, recommended course of action.
 - 'isEmergency': (boolean) True if the condition requires immediate medical attention.`;
 
-    const response = await ai.models.generateContent({
+    const response = await geminiAI.models.generateContent({
       model: 'gemini-2.5-pro',
       contents: {
           parts: [
