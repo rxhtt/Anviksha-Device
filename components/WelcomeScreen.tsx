@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { StethoscopeIcon, CameraIcon, GalleryIcon, DemoIcon, RecordsIcon, InfoIcon } from './IconComponents';
+import type { ApiKeyStatus } from '../types';
+import { StethoscopeIcon, CameraIcon, GalleryIcon, DemoIcon, RecordsIcon, InfoIcon, SettingsIcon } from './IconComponents';
 
 interface WelcomeScreenProps {
   onStartCamera: () => void;
@@ -7,6 +8,8 @@ interface WelcomeScreenProps {
   onStartDemo: () => void;
   onShowRecords: () => void;
   onShowDetails: () => void;
+  onShowSettings: () => void;
+  apiKeyStatus: ApiKeyStatus;
 }
 
 interface StatCardProps {
@@ -45,7 +48,18 @@ const ActionCard: React.FC<ActionCardProps> = ({ icon, title, description, onCli
     );
 };
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartDemo, onShowRecords, onShowDetails }) => {
+const ApiKeyWarning: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+    <div 
+      className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 text-left cursor-pointer hover:bg-red-200 transition-colors" 
+      role="alert"
+      onClick={onClick}
+    >
+      <p className="font-bold">Action Required: AI Not Configured</p>
+      <p className="text-sm">Live analysis is disabled. Please enter your Gemini API Key in the Settings to enable this feature.</p>
+    </div>
+);
+
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartDemo, onShowRecords, onShowDetails, onShowSettings, apiKeyStatus }) => {
     const galleryInputRef = useRef<HTMLInputElement>(null);
     
     const handleGalleryClick = () => {
@@ -68,11 +82,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
         className="hidden" 
         accept="image/*"
       />
+
+      {apiKeyStatus !== 'valid' && <ApiKeyWarning onClick={onShowSettings} />}
+
       <div className="text-6xl text-slate-800 mb-4 mx-auto w-fit"><StethoscopeIcon /></div>
       <h1 className="text-3xl font-bold text-slate-800 mb-2">Medical AI Diagnostic Station</h1>
       <p className="text-slate-600 mb-8 max-w-md mx-auto">
         Powered by Google's Gemini, this station provides instant chest X-ray analysis for 14+ conditions.
-        <span className="block font-semibold mt-1">An internet connection is required.</span>
       </p>
       
       <div className="stats-grid grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
@@ -102,20 +118,26 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
           description="View patient history"
           onClick={onShowRecords}
         />
-        <ActionCard
-          icon={<DemoIcon />}
-          title="Demo Mode"
-          description="Test with samples"
-          onClick={onStartDemo}
+         <ActionCard
+          icon={<SettingsIcon />}
+          title="Settings"
+          description="Configure AI key"
+          onClick={onShowSettings}
         />
       </div>
       
-      <div className="mt-8">
+      <div className="mt-8 grid grid-cols-2 gap-4">
+         <button 
+            onClick={onStartDemo}
+            className="text-slate-700 hover:text-slate-900 font-semibold py-2.5 px-4 rounded-full flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 transition-colors"
+        >
+            <DemoIcon /> Run Demo
+        </button>
         <button 
             onClick={onShowDetails}
-            className="text-blue-600 hover:text-blue-800 font-semibold py-2.5 px-4 rounded-full flex items-center justify-center gap-2 w-full max-w-xs mx-auto bg-blue-100 hover:bg-blue-200 transition-colors"
+            className="text-blue-600 hover:text-blue-800 font-semibold py-2.5 px-4 rounded-full flex items-center justify-center gap-2 w-full bg-blue-100 hover:bg-blue-200 transition-colors"
         >
-            <InfoIcon /> Learn What Anviksha AI Can Detect
+            <InfoIcon /> What It Detects
         </button>
       </div>
     </div>

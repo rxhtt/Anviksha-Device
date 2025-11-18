@@ -65,6 +65,24 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ onBack }) => {
                 ))}
             </div>
          </div>
+         
+         <div className="p-5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+            <h3 className="font-bold text-lg text-slate-800 mb-2">Credits & Info</h3>
+            <p className="text-sm text-slate-700">
+                Innovation and Concept by <strong>Rohit Bagewadi</strong>.
+            </p>
+            <p className="text-sm text-slate-700 mt-1">
+                Official Website:{' '}
+                <a 
+                    href="https://anviksha-ai.vercel.app/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 font-semibold hover:underline"
+                >
+                    anviksha-ai.vercel.app
+                </a>
+            </p>
+        </div>
       </div>
 
       {onBack && (

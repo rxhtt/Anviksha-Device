@@ -6,17 +6,16 @@ import AnalysisScreen from './components/AnalysisScreen';
 import ResultsScreen from './components/ResultsScreen';
 import RecordsScreen from './components/RecordsScreen';
 import DetailsScreen from './components/DetailsScreen';
+import SettingsScreen from './components/SettingsScreen';
 import ExitModal from './components/ExitModal';
-import AIManager from './services/aiManager.js'; // This is now the single source of truth
-import type { Screen, AnalysisResult } from './types';
-
-const aiManager = new AIManager();
+import AIManager from './services/aiManager.js';
+import type { Screen, AnalysisResult, ApiKeyStatus } from './types';
 
 // Helper to normalize results from the AI service
 const normalizeAiResult = (data: any): Omit<AnalysisResult, 'id' | 'date'> => {
   return {
     condition: data.condition,
-    confidence: Math.min(100, Math.max(0, data.confidence ?? 0)), // Clamp confidence 0-100 and provide default
+    confidence: Math.min(100, Math.max(0, data.confidence ?? 0)),
     description: data.description,
     details: data.details,
     treatment: data.treatment,
@@ -46,23 +45,30 @@ const App: React.FC = () => {
   const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(() => window.localStorage.getItem('geminiApiKey'));
+  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>('untested');
+
+  // Instantiate AIManager with the current API key
+  const aiManager = new AIManager(apiKey);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    // Initial check
-    aiManager.initialize().then(status => {
-      console.log("AI Manager initialized");
-    });
+    
+    // Test the key on initial load if it exists
+    if(apiKey) {
+      handleTestApiKey(apiKey);
+    } else {
+      setApiKeyStatus('not_configured');
+    }
 
     return () => {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -73,8 +79,38 @@ const App: React.FC = () => {
     }
   }, [patientRecords]);
 
+  const handleUpdateApiKey = async (newKey: string): Promise<boolean> => {
+    window.localStorage.setItem('geminiApiKey', newKey);
+    setApiKey(newKey);
+    return await handleTestApiKey(newKey);
+  };
+
+  const handleTestApiKey = async (keyToTest: string): Promise<boolean> => {
+    setApiKeyStatus('testing');
+    const testManager = new AIManager(keyToTest);
+    try {
+      await testManager.verifyApiKey();
+      setApiKeyStatus('valid');
+      return true;
+    } catch (err) {
+      setApiKeyStatus('invalid');
+      console.error(err);
+      return false;
+    }
+  };
+  
+  const handleClearApiKey = () => {
+    window.localStorage.removeItem('geminiApiKey');
+    setApiKey(null);
+    setApiKeyStatus('not_configured');
+  };
 
   const handleStartScan = (file: File) => {
+    if (apiKeyStatus !== 'valid' && !isDemoMode) {
+      setError("A valid API key is required for analysis. Please configure it in the Settings screen.");
+      setCurrentScreen('camera');
+      return;
+    }
     setImageFile(file);
     setCurrentScreen('analysis');
   };
@@ -94,7 +130,6 @@ const App: React.FC = () => {
   };
 
   const handleSaveRecord = (result: AnalysisResult) => {
-    // Prevent saving duplicates
     if (!patientRecords.some(record => record.id === result.id)) {
       setPatientRecords(prev => [result, ...prev]);
       alert('Record saved successfully!');
@@ -104,7 +139,7 @@ const App: React.FC = () => {
 
   const handleViewRecord = (id: string) => {
     setViewingRecordId(id);
-    setImageFile(null); // No image available for saved records yet
+    setImageFile(null);
     setCurrentScreen('results');
   };
 
@@ -114,10 +149,10 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-    setError(null); // Clear errors on navigation
+    setError(null);
     if (currentScreen === 'results' && viewingRecordId) {
       handleReturnToRecords();
-    } else if (['camera', 'records', 'details'].includes(currentScreen)) {
+    } else if (['camera', 'records', 'details', 'settings'].includes(currentScreen)) {
       setCurrentScreen('welcome');
     }
   };
@@ -127,10 +162,7 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      // AIManager.analyzeImage now throws on failure, simplifying this block.
       const rawResult = await aiManager.analyzeImage(file, isDemoMode);
-
-      // Normalization is still a good practice for safety.
       const normalizedData = normalizeAiResult(rawResult);
       
       const resultWithMetadata: AnalysisResult = {
@@ -143,12 +175,12 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Analysis failed:", err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(`Analysis failed: ${errorMessage}. Please try again or use a different image.`);
-      setCurrentScreen('camera'); // Go back to camera screen on error
+      setError(`Analysis failed: ${errorMessage}. Please try again or check your API Key in Settings.`);
+      setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
     }
-  }, [isDemoMode]);
+  }, [aiManager, isDemoMode]);
 
   useEffect(() => {
     if (currentScreen === 'analysis' && imageFile) {
@@ -157,21 +189,17 @@ const App: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScreen, imageFile]);
 
-  // Kiosk mode preventions
   useEffect(() => {
     const preventDefault = (e: Event) => e.preventDefault();
     document.addEventListener('contextmenu', preventDefault);
-    // Allow text selection in results
-    if (currentScreen !== 'results') {
+    if (currentScreen !== 'results' && currentScreen !== 'settings') {
       document.addEventListener('selectstart', preventDefault);
     }
-
     return () => {
       document.removeEventListener('contextmenu', preventDefault);
       document.removeEventListener('selectstart', preventDefault);
     };
   }, [currentScreen]);
-
 
   const renderScreen = () => {
     if (viewingRecordId && currentScreen === 'results') {
@@ -190,6 +218,15 @@ const App: React.FC = () => {
         return <RecordsScreen records={patientRecords} onViewRecord={handleViewRecord} onBackToHome={handleBack} />;
       case 'details':
         return <DetailsScreen onBack={handleBack} />;
+      case 'settings':
+        return <SettingsScreen
+                  apiKey={apiKey}
+                  apiKeyStatus={apiKeyStatus}
+                  onUpdateApiKey={handleUpdateApiKey}
+                  onTestApiKey={handleTestApiKey}
+                  onClearApiKey={handleClearApiKey}
+                  onBack={handleBack}
+                />;
       case 'welcome':
       default:
         return <WelcomeScreen 
@@ -198,6 +235,8 @@ const App: React.FC = () => {
                   onStartDemo={handleStartDemo} 
                   onShowRecords={() => setCurrentScreen('records')}
                   onShowDetails={() => setCurrentScreen('details')}
+                  onShowSettings={() => setCurrentScreen('settings')}
+                  apiKeyStatus={apiKeyStatus}
                 />;
     }
   };

@@ -1,4 +1,6 @@
-export type Screen = 'welcome' | 'camera' | 'analysis' | 'results' | 'records' | 'details';
+export type Screen = 'welcome' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings';
+
+export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
 
 export interface AnalysisResult {
   id: string;

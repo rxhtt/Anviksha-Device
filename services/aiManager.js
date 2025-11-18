@@ -1,27 +1,7 @@
 // aiManager.js - Manages cloud-based AI analysis via Gemini
 // This is the single source of truth for all AI interactions.
-// Other AI service files are deprecated.
 
 import { GoogleGenAI, Type } from "@google/genai";
-
-let ai = null;
-
-/**
- * Initializes and returns the GoogleGenAI client instance.
- * Throws an error if the API key is not configured.
- * @returns {GoogleGenAI} The initialized AI client.
- */
-const getAiClient = () => {
-    if (ai) {
-        return ai;
-    }
-    // For Vercel deployments, environment variables must be prefixed with NEXT_PUBLIC_ to be exposed to the browser.
-    if (!process.env.NEXT_PUBLIC_API_KEY) {
-        throw new Error('API Key is not configured. Please set the NEXT_PUBLIC_API_KEY environment variable for your Vercel deployment.');
-    }
-    ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_API_KEY });
-    return ai;
-};
 
 /**
  * Converts a File object to a GoogleGenAI.Part object.
@@ -47,16 +27,86 @@ const fileToGenerativePart = async (file) => {
 };
 
 /**
- * Analyzes an X-ray image using the Gemini API. Throws on failure.
- * @param {File} imageFile The X-ray image file.
- * @returns {Promise<object>} The analysis result from the API.
+ * Returns a mock analysis result for demo mode.
+ * @returns {Promise<object>} A promise that resolves with the mock data.
  */
-const performCloudAnalysis = async (imageFile) => {
-  try {
-    const geminiAI = getAiClient();
-    const imagePart = await fileToGenerativePart(imageFile);
-    
-    const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
+const getDemoResult = () => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve({
+        condition: "PNEUMONIA",
+        confidence: 92,
+        description: "Opacity and consolidation observed in the lower lobe of the right lung, consistent with pneumonia.",
+        details: "The radiograph shows significant airspace opacity in the right lower lobe. Air bronchograms are visible, which is a classic sign of alveolar filling, strongly suggesting bacterial pneumonia. The cardiac silhouette and pleural spaces appear normal. No signs of tuberculosis or pneumothorax were found.",
+        treatment: "Immediate consultation with a physician is recommended. Standard treatment involves a course of antibiotics. Further testing, such as a sputum culture, may be required to identify the specific pathogen.",
+        isEmergency: true,
+        modelUsed: 'Demo Model',
+        cost: 0,
+      });
+    }, 2500); // Simulate analysis time
+  });
+};
+
+class AIManager {
+    #apiKey;
+    #aiClient;
+
+    /**
+     * @param {string | null} apiKey The Gemini API key.
+     */
+    constructor(apiKey) {
+        this.#apiKey = apiKey;
+        this.#aiClient = null;
+    }
+
+    /**
+     * Initializes and returns the GoogleGenAI client instance.
+     * Throws an error if the API key is not configured.
+     * @private
+     * @returns {GoogleGenAI} The initialized AI client.
+     */
+    #getAiClient() {
+        if (this.#aiClient) {
+            return this.#aiClient;
+        }
+        if (!this.#apiKey) {
+            throw new Error('API Key is not configured. Please set it in the Settings screen.');
+        }
+        this.#aiClient = new GoogleGenAI({ apiKey: this.#apiKey });
+        return this.#aiClient;
+    }
+
+    /**
+     * Verifies if the current API key is valid by making a lightweight request.
+     * Throws an error if the key is invalid or the request fails.
+     */
+    async verifyApiKey() {
+      try {
+        // This is a lightweight call to check if the key is valid.
+        // It uses the fast and efficient gemini-2.5-flash model.
+        const geminiAI = this.#getAiClient();
+        await geminiAI.models.generateContent({model: 'gemini-2.5-flash', contents: 'test'});
+      } catch (error) {
+         console.error('API Key validation failed:', error);
+         if (error.message.includes('API key not valid')) {
+             throw new Error('The provided API Key is invalid. Please check and try again.');
+         }
+         throw new Error('Could not verify API key. Check your network connection or the key itself.');
+      }
+    }
+
+    /**
+     * Analyzes an X-ray image using the Gemini API. Throws on failure.
+     * @private
+     * @param {File} imageFile The X-ray image file.
+     * @returns {Promise<object>} The analysis result from the API.
+     */
+    async #performCloudAnalysis(imageFile) {
+        try {
+            const geminiAI = this.#getAiClient();
+            const imagePart = await fileToGenerativePart(imageFile);
+            
+            const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
 
 Step 1: Systematic Analysis.
 Carefully examine the image for abnormalities in the lungs, heart, bones, and pleural space. Note any signs of: Consolidation, infiltrates, opacities, cavitary lesions, nodules, pleural effusion, pneumothorax, cardiomegaly, rib fractures, fibrosis, edema, masses, or other findings.
@@ -78,83 +128,57 @@ The JSON object must have these exact keys:
 - 'treatment': (string) A general, recommended course of action.
 - 'isEmergency': (boolean) True if the condition requires immediate medical attention.`;
 
-    const response = await geminiAI.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: {
-          parts: [
-              imagePart,
-              { text: prompt },
-          ]
-      },
-      config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              condition: { type: Type.STRING, description: "The identified medical condition (e.g., 'PNEUMONIA')." },
-              confidence: { type: Type.INTEGER, description: "Confidence level of the diagnosis from 0 to 100." },
-              description: { type: Type.STRING, description: "A brief, one-sentence summary of the findings." },
-              details: { type: Type.STRING, description: "A detailed paragraph explaining the findings and their implications."},
-              treatment: { type: Type.STRING, description: "A recommended course of action or treatment." },
-              isEmergency: { type: Type.BOOLEAN, description: "Indicates if the condition is an emergency." }
-            },
-            required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
-          },
-      },
-    });
+            const response = await geminiAI.models.generateContent({
+              model: 'gemini-2.5-pro',
+              contents: {
+                  parts: [
+                      imagePart,
+                      { text: prompt },
+                  ]
+              },
+              config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                      condition: { type: Type.STRING, description: "The identified medical condition (e.g., 'PNEUMONIA')." },
+                      confidence: { type: Type.INTEGER, description: "Confidence level of the diagnosis from 0 to 100." },
+                      description: { type: Type.STRING, description: "A brief, one-sentence summary of the findings." },
+                      details: { type: Type.STRING, description: "A detailed paragraph explaining the findings and their implications."},
+                      treatment: { type: Type.STRING, description: "A recommended course of action or treatment." },
+                      isEmergency: { type: Type.BOOLEAN, description: "Indicates if the condition is an emergency." }
+                    },
+                    required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
+                  },
+              },
+            });
 
-    const jsonText = response.text.trim();
-    // The Gemini API with a JSON schema might still wrap the JSON in markdown backticks.
-    // This removes them for robust parsing.
-    const cleanJsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '');
-    const result = JSON.parse(cleanJsonText);
-    
-    return {
-        ...result,
-        modelUsed: 'Gemini 2.5 Pro',
-        cost: 150,
-    };
-    
-  } catch (error) {
-    console.error('Error analyzing X-ray with Gemini API:', error);
-    let message = 'Failed to get analysis from AI service.';
-    if (error instanceof Error) {
-        if(error.message.includes('API key') || error.message.includes('API Key')) {
-            message = 'AI Service failed: The API Key is missing, invalid, or not correctly configured for this deployment.';
-        } else if (error instanceof SyntaxError || error.message.includes('JSON')) {
-            message = 'AI Service returned an invalid format. Could not parse the response.';
-        } else {
-            message = `AI Service error: ${error.message}`;
+            const jsonText = response.text.trim();
+            const cleanJsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '');
+            const result = JSON.parse(cleanJsonText);
+            
+            return {
+                ...result,
+                modelUsed: 'Gemini 2.5 Pro',
+                cost: 150,
+            };
+            
+        } catch (error) {
+            console.error('Error analyzing X-ray with Gemini API:', error);
+            let message = 'Failed to get analysis from AI service.';
+            if (error instanceof Error) {
+                if(error.message.toLowerCase().includes('api key')) {
+                    message = 'AI Service failed: The provided API Key is invalid or expired.';
+                } else if (error instanceof SyntaxError || error.message.includes('json')) {
+                    message = 'AI Service returned an invalid format. Could not parse the response.';
+                } else {
+                    message = `AI Service error: ${error.message}`;
+                }
+            }
+            throw new Error(message);
         }
     }
-    throw new Error(message);
-  }
-};
 
-
-/**
- * Returns a mock analysis result for demo mode.
- * @returns {Promise<object>} A promise that resolves with the mock data.
- */
-const getDemoResult = () => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve({
-        condition: "PNEUMONIA",
-        confidence: 92,
-        description: "Opacity and consolidation observed in the lower lobe of the right lung, consistent with pneumonia.",
-        details: "The radiograph shows significant airspace opacity in the right lower lobe. Air bronchograms are visible, which is a classic sign of alveolar filling, strongly suggesting bacterial pneumonia. The cardiac silhouette and pleural spaces appear normal. No signs of tuberculosis or pneumothorax were found.",
-        treatment: "Immediate consultation with a physician is recommended. Standard treatment involves a course of antibiotics. Further testing, such as a sputum culture, may be required to identify the specific pathogen.",
-        isEmergency: true,
-        modelUsed: 'Demo Model',
-        cost: 0,
-      });
-    }, 2500); // Simulate analysis time
-  });
-};
-
-
-class AIManager {
     /**
      * Analyzes an image file. Throws an error on failure.
      * @param {File} imageFile The image file to analyze.
@@ -172,15 +196,7 @@ class AIManager {
             throw new Error('An internet connection is required for AI analysis. Please connect to a network and try again.');
         }
 
-        // This will now throw an error on failure, which will be caught by the caller in App.tsx
-        return await performCloudAnalysis(imageFile);
-    }
-    
-    /**
-     * Initializes the AI Manager.
-     */
-    async initialize() {
-        console.log('Initializing AI Manager (Cloud-only mode)...');
+        return await this.#performCloudAnalysis(imageFile);
     }
 }
 
