@@ -6,20 +6,14 @@ let ai: GoogleGenAI | null = null;
 /**
  * Initializes and returns the GoogleGenAI client instance.
  * This function uses a singleton pattern to ensure the client is created only once.
- * It should only be called after verifying the API key exists.
  * @returns {GoogleGenAI} The initialized AI client.
  */
 const getAiClient = (): GoogleGenAI => {
     if (ai) {
         return ai;
     }
-    // FIX: Cast import.meta to any to access env property without TypeScript errors.
-    const apiKey = (import.meta as any).env.VITE_API_KEY;
-    if (!apiKey) {
-        // This check is a safeguard. The main App component should prevent this from being called without a key.
-        throw new Error("VITE_API_KEY is not set. Cannot initialize Gemini AI client.");
-    }
-    ai = new GoogleGenAI({ apiKey });
+    // The API key is expected to be injected by the execution environment.
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     return ai;
 };
 

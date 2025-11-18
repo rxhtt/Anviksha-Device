@@ -1,5 +1,152 @@
 // aiManager.js - Manages cloud-based AI analysis via Gemini
-import CloudAI from './cloudAI.ts';
+// Contains merged logic from geminiService.ts and cloudAI.ts to resolve module loading issues.
+
+import { GoogleGenAI, Type } from "@google/genai";
+
+// --- Start of merged geminiService.ts logic ---
+
+let ai = null;
+
+/**
+ * Initializes and returns the GoogleGenAI client instance.
+ * @returns {GoogleGenAI} The initialized AI client.
+ */
+const getAiClient = () => {
+    if (ai) {
+        return ai;
+    }
+    // The API key is expected to be injected by the execution environment.
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    return ai;
+};
+
+/**
+ * Converts a File object to a GoogleGenAI.Part object.
+ * @param {File} file The file to convert.
+ * @returns {Promise<{inlineData: {data: string, mimeType: string}}>}
+ */
+const fileToGenerativePart = async (file) => {
+  const base64EncodedDataPromise = new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result.split(',')[1]);
+      } else {
+        // Handle error case if reader result is not a string
+        resolve(''); // Or reject the promise
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  return {
+    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+  };
+};
+
+/**
+ * Analyzes an X-ray image using the Gemini API.
+ * @param {File} imageFile The X-ray image file.
+ * @returns {Promise<object>} The analysis result from the API.
+ */
+const analyzeXRay = async (imageFile) => {
+  try {
+    const geminiAI = getAiClient();
+    const imagePart = await fileToGenerativePart(imageFile);
+    
+    const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
+
+Step 1: Systematic Analysis.
+Carefully examine the image for abnormalities in the lungs, heart, bones, and pleural space. Note any signs of: Consolidation, infiltrates, opacities, cavitary lesions, nodules, pleural effusion, pneumothorax, cardiomegaly, rib fractures, fibrosis, edema, masses, or other findings.
+
+Step 2: Formulate a Diagnosis.
+Based on your observations, determine the most likely primary condition from this list: Tuberculosis, Pneumonia, Atelectasis, Cardiomegaly, Effusion, Nodule/Mass, Pneumothorax, Fibrosis, Edema, Consolidation, Emphysema, Fracture, Hernia, Infiltration. If no abnormalities are found, classify it as 'Normal'.
+
+Step 3: Justify Your Findings & Provide a Recommendation.
+Explain your reasoning. What specific visual evidence supports your diagnosis? What is the recommended course of action?
+
+Step 4: Synthesize the Final JSON Output.
+Now, combine all your findings into a single JSON object. The response must be ONLY the JSON object, with no other text, explanations, or markdown formatting before or after it.
+
+The JSON object must have these exact keys:
+- 'condition': (string) The final diagnosis from the list in ALL CAPS.
+- 'confidence': (number) Your confidence score from 0 to 100.
+- 'description': (string) A brief, one-sentence summary of the key finding.
+- 'details': (string) Your detailed analysis and justification from Step 3.
+- 'treatment': (string) A general, recommended course of action.
+- 'isEmergency': (boolean) True if the condition requires immediate medical attention.`;
+
+    const response = await geminiAI.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: {
+          parts: [
+              imagePart,
+              { text: prompt },
+          ]
+      },
+      config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              condition: { type: Type.STRING, description: "The identified medical condition (e.g., 'PNEUMONIA')." },
+              confidence: { type: Type.INTEGER, description: "Confidence level of the diagnosis from 0 to 100." },
+              description: { type: Type.STRING, description: "A brief, one-sentence summary of the findings." },
+              details: { type: Type.STRING, description: "A detailed paragraph explaining the findings and their implications."},
+              treatment: { type: Type.STRING, description: "A recommended course of action or treatment." },
+              isEmergency: { type: Type.BOOLEAN, description: "Indicates if the condition is an emergency." }
+            },
+            required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
+          },
+      },
+    });
+
+    const jsonText = response.text.trim();
+    const result = JSON.parse(jsonText);
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Error analyzing X-ray with Gemini API:', error);
+    throw new Error('Failed to get analysis from AI service.');
+  }
+};
+
+// --- End of merged geminiService.ts logic ---
+
+
+// --- Start of merged cloudAI.ts logic ---
+class CloudAI {
+    async analyzeImage(imageFile) {
+        try {
+            console.log('Sending image to cloud AI (Gemini)...');
+            const result = await analyzeXRay(imageFile);
+            
+            return {
+                ...result,
+                condition: result.condition || 'ANALYSIS_FAILED',
+                confidence: result.confidence,
+                emergency: result.isEmergency,
+                cost: 150,
+                aiMode: 'cloud',
+                processingTime: null,
+                server: 'Google Cloud',
+                modelUsed: 'Gemini 2.5 Pro'
+            };
+        } catch (error) {
+            console.error('❌ Cloud AI (Gemini) analysis failed:', error);
+            if (error instanceof Error) {
+                throw new Error(`Cloud AI service error: ${error.message}`);
+            }
+            throw new Error(`Cloud AI service error: An unknown error occurred.`);
+        }
+    }
+
+    async healthCheck() {
+        return { status: 'healthy', timestamp: new Date().toISOString() };
+    }
+}
+// --- End of merged cloudAI.ts logic ---
+
 
 class AIManager {
     constructor() {

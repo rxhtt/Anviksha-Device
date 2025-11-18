@@ -11,50 +11,6 @@ import AIManager from './services/aiManager.js'; // This is now cloud-only
 import type { Screen, AnalysisResult } from './types';
 
 const aiManager = new AIManager();
-// FIX: Cast import.meta to any to access env property without TypeScript errors.
-const apiKey = (import.meta as any).env.VITE_API_KEY;
-
-// --- API Key Missing Screen ---
-// This component is shown if the VITE_API_KEY environment variable is not set.
-const WarningIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
-);
-
-const ApiKeyMissingScreen: React.FC = () => {
-    return (
-        <div className="bg-slate-50 h-screen w-screen flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full bg-white shadow-2xl rounded-2xl p-8 text-center">
-                <div className="text-7xl text-amber-500 mx-auto w-fit mb-4">
-                    <WarningIcon />
-                </div>
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">Configuration Error</h1>
-                <p className="text-slate-600 mb-6 max-w-lg mx-auto">
-                    The Gemini API key is missing. The application cannot start without it. Please follow the steps below to configure your project.
-                </p>
-
-                <div className="text-left bg-slate-100 p-6 rounded-lg border border-slate-200">
-                    <h2 className="font-bold text-lg text-slate-700 mb-3">How to Fix on Vercel:</h2>
-                    <ol className="list-decimal list-inside space-y-3 text-slate-700">
-                        <li>Go to your project dashboard on the <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-semibold">Vercel website</a>.</li>
-                        <li>Navigate to the <strong>Settings</strong> tab for this project.</li>
-                        <li>Click on <strong>Environment Variables</strong> in the sidebar.</li>
-                        <li>
-                            Create a new variable with the name <code className="bg-slate-200 text-red-600 font-mono py-1 px-1.5 rounded-md text-sm">VITE_API_KEY</code>.
-                        </li>
-                        <li>Paste your Gemini API key into the value field.</li>
-                        <li>Save the variable and redeploy the latest commit for the changes to take effect.</li>
-                    </ol>
-                </div>
-                 <p className="text-xs text-slate-400 mt-6">
-                    Make sure the variable name is spelled correctly and includes the `VITE_` prefix. This is required for security and allows the key to be accessible by the application.
-                </p>
-            </div>
-        </div>
-    );
-};
-
 
 // Helper to normalize results from the AI service
 const normalizeAiResult = (data: any): Omit<AnalysisResult, 'id' | 'date'> => {
@@ -93,12 +49,6 @@ const App: React.FC = () => {
   const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isDemoMode, setIsDemoMode] = useState(false);
-
-  // If the API key is not provided, render a dedicated error screen.
-  // This prevents the app from crashing and provides clear instructions to the user.
-  if (!apiKey) {
-    return <ApiKeyMissingScreen />;
-  }
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
