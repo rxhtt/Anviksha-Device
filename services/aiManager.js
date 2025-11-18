@@ -26,16 +26,16 @@ const getAiClient = () => {
  * @returns {Promise<{inlineData: {data: string, mimeType: string}}>}
  */
 const fileToGenerativePart = async (file) => {
-  const base64EncodedDataPromise = new Promise((resolve) => {
+  const base64EncodedDataPromise = new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
         resolve(reader.result.split(',')[1]);
       } else {
-        // Handle error case if reader result is not a string
-        resolve(''); // Or reject the promise
+        reject(new Error('Failed to read file as data URL.'));
       }
     };
+    reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
   return {
@@ -101,13 +101,26 @@ The JSON object must have these exact keys:
     });
 
     const jsonText = response.text.trim();
-    const result = JSON.parse(jsonText);
+    // The Gemini API with a JSON schema might still wrap the JSON in markdown backticks.
+    // This removes them for robust parsing.
+    const cleanJsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '');
+    const result = JSON.parse(cleanJsonText);
     
     return result;
     
   } catch (error) {
     console.error('Error analyzing X-ray with Gemini API:', error);
-    throw new Error('Failed to get analysis from AI service.');
+    let message = 'Failed to get analysis from AI service.';
+    if (error instanceof Error) {
+        if(error.message.includes('API key is missing')) {
+            message = 'AI Service failed: The API Key is missing or invalid. Please check your configuration.';
+        } else if (error instanceof SyntaxError) {
+            message = 'AI Service returned an invalid format. Could not parse the response.';
+        } else {
+            message = `AI Service error: ${error.message}`;
+        }
+    }
+    throw new Error(message);
   }
 };
 
@@ -123,26 +136,14 @@ class CloudAI {
             
             return {
                 ...result,
-                condition: result.condition || 'ANALYSIS_FAILED',
-                confidence: result.confidence,
-                emergency: result.isEmergency,
+                modelUsed: 'Gemini 2.5 Pro',
                 cost: 150,
-                aiMode: 'cloud',
-                processingTime: null,
-                server: 'Google Cloud',
-                modelUsed: 'Gemini 2.5 Pro'
             };
         } catch (error) {
             console.error('❌ Cloud AI (Gemini) analysis failed:', error);
-            if (error instanceof Error) {
-                throw new Error(`Cloud AI service error: ${error.message}`);
-            }
-            throw new Error(`Cloud AI service error: An unknown error occurred.`);
+            // Re-throw the more detailed error from analyzeXRay
+            throw error;
         }
-    }
-
-    async healthCheck() {
-        return { status: 'healthy', timestamp: new Date().toISOString() };
     }
 }
 // --- End of merged cloudAI.ts logic ---
@@ -165,29 +166,18 @@ class AIManager {
                 condition: 'ANALYSIS_UNAVAILABLE',
                 description: 'An internet connection is required for AI analysis. Please connect to a network and try again.',
                 isEmergency: true,
-                aiMode: 'none',
-                error: 'Device is offline.',
             };
         }
 
         try {
-            const startTime = performance.now();
-            const result = await this.cloudAI.analyzeImage(imageFile);
-            const processingTime = (performance.now() - startTime) / 1000;
-
-            return {
-                ...result,
-                processingTime: `${processingTime.toFixed(1)}s`,
-                usedMode: 'cloud',
-            };
+            return await this.cloudAI.analyzeImage(imageFile);
         } catch (error) {
-            console.error('❌ AI analysis failed:', error);
+            console.error('❌ AI analysis failed in AIManager:', error);
+            const errorMessage = error instanceof Error ? error.message : 'The AI service could not process the image. Please try again.';
             return {
                 condition: 'ANALYSIS_FAILED',
-                description: error.message || 'The AI service could not process the image. Please try again.',
+                description: errorMessage,
                 isEmergency: true,
-                aiMode: 'none',
-                error: error.message,
             };
         }
     }
@@ -197,7 +187,6 @@ class AIManager {
      */
     async initialize() {
         console.log('Initializing AI Manager (Cloud-only mode)...');
-        return this.getStatus();
     }
 
     /**
@@ -205,10 +194,6 @@ class AIManager {
      */
     getStatus() {
         return {
-            onDevice: {
-                available: false,
-                status: 'not_supported'
-            },
             cloud: {
                 available: navigator.onLine,
                 status: navigator.onLine ? 'connected' : 'offline'
