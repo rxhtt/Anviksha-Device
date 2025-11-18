@@ -112,7 +112,7 @@ The JSON object must have these exact keys:
     console.error('Error analyzing X-ray with Gemini API:', error);
     let message = 'Failed to get analysis from AI service.';
     if (error instanceof Error) {
-        if(error.message.includes('API key is missing')) {
+        if(error.message.includes('API key')) {
             message = 'AI Service failed: The API Key is missing or invalid. Please check your configuration.';
         } else if (error instanceof SyntaxError) {
             message = 'AI Service returned an invalid format. Could not parse the response.';
@@ -125,6 +125,27 @@ The JSON object must have these exact keys:
 };
 
 // --- End of merged geminiService.ts logic ---
+
+/**
+ * Returns a mock analysis result for demo mode.
+ * @returns {Promise<object>} A promise that resolves with the mock data.
+ */
+const getDemoResult = () => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve({
+        condition: "PNEUMONIA",
+        confidence: 92,
+        description: "Opacity and consolidation observed in the lower lobe of the right lung, consistent with pneumonia.",
+        details: "The radiograph shows significant airspace opacity in the right lower lobe. Air bronchograms are visible, which is a classic sign of alveolar filling, strongly suggesting bacterial pneumonia. The cardiac silhouette and pleural spaces appear normal. No signs of tuberculosis or pneumothorax were found.",
+        treatment: "Immediate consultation with a physician is recommended. Standard treatment involves a course of antibiotics. Further testing, such as a sputum culture, may be required to identify the specific pathogen.",
+        isEmergency: true,
+        modelUsed: 'Demo Model',
+        cost: 0,
+      });
+    }, 2500); // Simulate analysis time
+  });
+};
 
 
 // --- Start of merged cloudAI.ts logic ---
@@ -155,11 +176,17 @@ class AIManager {
     }
 
     /**
-     * Analyzes an image file using the cloud-based Gemini AI.
+     * Analyzes an image file. Uses a mock result in demo mode, otherwise uses the cloud AI.
      * @param {File} imageFile The image file to analyze.
+     * @param {boolean} isDemoMode Whether to run in demo mode.
      * @returns {Promise<object>} The analysis result.
      */
-    async analyzeImage(imageFile) {
+    async analyzeImage(imageFile, isDemoMode = false) {
+        if (isDemoMode) {
+            console.log('Running in Demo Mode...');
+            return getDemoResult();
+        }
+
         if (!navigator.onLine) {
             console.error('Offline: Cannot perform cloud analysis.');
             return {

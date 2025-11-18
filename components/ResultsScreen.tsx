@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { AnalysisResult } from '../types';
-import { ArrowLeftIcon, SaveIcon, BrainCircuitIcon, RecordsIcon, SparklesIcon, ShareIcon } from './IconComponents';
+import { ArrowLeftIcon, SaveIcon, BrainCircuitIcon, RecordsIcon, SparklesIcon, ShareIcon, PrintIcon } from './IconComponents';
 import ImageZoom from './ImageZoom';
 
 interface ResultsScreenProps {
@@ -30,6 +30,10 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
         return () => URL.revokeObjectURL(url);
     }
   }, [imageFile]);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleShare = async () => {
     let reportText = `*** ANVIKSHA AI - X-RAY ANALYSIS REPORT ***\n\n`;
@@ -80,7 +84,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
       {isDemoMode && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-4 text-left" role="alert">
               <p className="font-bold">Demo Mode Result</p>
-              <p className="text-sm">This is a real analysis performed in Demo Mode. The report cannot be saved to patient records.</p>
+              <p className="text-sm">This is a sample analysis performed in Demo Mode. The report cannot be saved to patient records.</p>
           </div>
       )}
       {imageUrl && (
@@ -167,11 +171,16 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
             </>
         )}
       </div>
-       <div className="mt-4 no-print">
+       <div className="mt-4 no-print grid grid-cols-2 gap-4">
          <button 
             onClick={handleShare} 
             className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold py-3 px-4 rounded-full flex items-center justify-center gap-2 transition-colors">
             <ShareIcon /> Share Report
+        </button>
+         <button 
+            onClick={handlePrint} 
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-full flex items-center justify-center gap-2 transition-colors">
+            <PrintIcon /> Print Report
         </button>
        </div>
        <div className="text-xs text-slate-400 text-center mt-6 border-t pt-4">

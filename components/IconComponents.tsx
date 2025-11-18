@@ -120,6 +120,13 @@ export const ShareIcon: React.FC = () => (
     </svg>
 );
 
+export const PrintIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+    </svg>
+);
+
+
 export const WifiIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.555a5.5 5.5 0 017.778 0M12 20.25a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5H12a.75.75 0 01-.75-.75zM4.444 12.889a10 10 0 0115.112 0" />
@@ -141,6 +148,14 @@ export const SearchIcon: React.FC = () => (
 export const InfoIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+export const RetakeIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h.01M15 10h.01M12 6v.01M12 18v.01M6 12H4.5a2.5 2.5 0 00-2.5 2.5v0a2.5 2.5 0 002.5 2.5H6m12 0h1.5a2.5 2.5 0 002.5-2.5v0a2.5 2.5 0 00-2.5-2.5H18" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 9l-3 3m0-3l3 3" />
     </svg>
 );
 

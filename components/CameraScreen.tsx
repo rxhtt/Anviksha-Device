@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadIcon, CameraIcon, ShutterIcon, CameraOffIcon, ArrowLeftIcon } from './IconComponents';
+import { UploadIcon, CameraIcon, ShutterIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon } from './IconComponents';
 
 interface CameraScreenProps {
   onStartScan: (file: File) => void;
@@ -109,6 +109,11 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
         }, 100);
     }
   };
+  
+  const handleRetake = () => {
+    setImagePreview(null);
+    setFile(null);
+  }
 
   const handleScan = () => {
     if (file) {
@@ -136,7 +141,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
       {isDemoMode && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-4 text-left" role="alert">
               <p className="font-bold">Demo Mode</p>
-              <p className="text-sm">You are in Demo Mode. The analysis will be performed by the live Gemini AI, but the result cannot be saved to patient records.</p>
+              <p className="text-sm">You are in Demo Mode. The analysis will be simulated using sample data, and the result cannot be saved to patient records.</p>
           </div>
       )}
       <h2 className="text-2xl font-bold text-slate-800">Position Chest X-ray</h2>
@@ -162,13 +167,23 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, isDemoM
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
 
       <div className="grid grid-cols-5 gap-4 items-center">
-        <button 
-            className="col-span-1 text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold p-3 rounded-full flex items-center justify-center w-full aspect-square transition-colors" 
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Upload File"
-        >
-          <UploadIcon />
-        </button>
+        {imagePreview ? (
+            <button
+                className="col-span-1 text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold p-3 rounded-full flex items-center justify-center w-full aspect-square transition-colors" 
+                onClick={handleRetake}
+                aria-label="Retake Photo"
+            >
+                <RetakeIcon />
+            </button>
+        ) : (
+            <button 
+                className="col-span-1 text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold p-3 rounded-full flex items-center justify-center w-full aspect-square transition-colors" 
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Upload File"
+            >
+              <UploadIcon />
+            </button>
+        )}
 
         <div className="col-span-3">
         {imagePreview ? (

@@ -129,9 +129,9 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // UNIFIED ANALYSIS: Both demo and regular scans use the real AI.
+    // In Demo Mode, analysis is simulated. In normal mode, it uses the live AI.
     try {
-      const rawResult = await aiManager.analyzeImage(file);
+      const rawResult = await aiManager.analyzeImage(file, isDemoMode);
 
       if (rawResult.condition === 'ANALYSIS_UNAVAILABLE' || rawResult.condition === 'ANALYSIS_FAILED') {
         throw new Error(rawResult.description || 'AI analysis failed.');

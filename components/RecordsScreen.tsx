@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { AnalysisResult } from '../types';
-import { SyncIcon, RecordsIcon, SearchIcon, ArrowLeftIcon } from './IconComponents';
+import { SyncIcon, RecordsIcon, SearchIcon, ArrowLeftIcon, InfoIcon } from './IconComponents';
 
 interface RecordsScreenProps {
   records: AnalysisResult[];
@@ -68,7 +68,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-3xl font-bold text-slate-800">Patient Records</h2>
         <button 
             onClick={handleSync}
@@ -87,6 +87,11 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
         </button>
       </div>
       
+      <div className="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-lg mb-4 flex items-center gap-2">
+        <InfoIcon />
+        <span>Records are stored securely on this device and are available offline.</span>
+      </div>
+
        <div className="mb-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-grow">
             <input 
