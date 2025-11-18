@@ -1,21 +1,24 @@
 // aiManager.js - Manages cloud-based AI analysis via Gemini
-// Contains merged logic from geminiService.ts and cloudAI.ts to resolve module loading issues.
+// This is the single source of truth for all AI interactions.
+// Other AI service files are deprecated.
 
 import { GoogleGenAI, Type } from "@google/genai";
-
-// --- Start of merged geminiService.ts logic ---
 
 let ai = null;
 
 /**
  * Initializes and returns the GoogleGenAI client instance.
+ * Throws an error if the API key is not configured.
  * @returns {GoogleGenAI} The initialized AI client.
  */
 const getAiClient = () => {
     if (ai) {
         return ai;
     }
-    // The API key is expected to be injected by the execution environment.
+    // The API key is expected to be injected by the execution environment (e.g., Vercel).
+    if (!process.env.API_KEY) {
+        throw new Error('API Key is not configured. Please set the API_KEY environment variable for your deployment.');
+    }
     ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     return ai;
 };
@@ -44,11 +47,11 @@ const fileToGenerativePart = async (file) => {
 };
 
 /**
- * Analyzes an X-ray image using the Gemini API.
+ * Analyzes an X-ray image using the Gemini API. Throws on failure.
  * @param {File} imageFile The X-ray image file.
  * @returns {Promise<object>} The analysis result from the API.
  */
-const analyzeXRay = async (imageFile) => {
+const performCloudAnalysis = async (imageFile) => {
   try {
     const geminiAI = getAiClient();
     const imagePart = await fileToGenerativePart(imageFile);
@@ -106,7 +109,11 @@ The JSON object must have these exact keys:
     const cleanJsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '');
     const result = JSON.parse(cleanJsonText);
     
-    return result;
+    return {
+        ...result,
+        modelUsed: 'Gemini 2.5 Pro',
+        cost: 150,
+    };
     
   } catch (error) {
     console.error('Error analyzing X-ray with Gemini API:', error);
@@ -114,7 +121,7 @@ The JSON object must have these exact keys:
     if (error instanceof Error) {
         if(error.message.includes('API key')) {
             message = 'AI Service failed: The API Key is missing or invalid. Please check your configuration.';
-        } else if (error instanceof SyntaxError) {
+        } else if (error instanceof SyntaxError || error.message.includes('JSON')) {
             message = 'AI Service returned an invalid format. Could not parse the response.';
         } else {
             message = `AI Service error: ${error.message}`;
@@ -124,7 +131,6 @@ The JSON object must have these exact keys:
   }
 };
 
-// --- End of merged geminiService.ts logic ---
 
 /**
  * Returns a mock analysis result for demo mode.
@@ -148,35 +154,9 @@ const getDemoResult = () => {
 };
 
 
-// --- Start of merged cloudAI.ts logic ---
-class CloudAI {
-    async analyzeImage(imageFile) {
-        try {
-            console.log('Sending image to cloud AI (Gemini)...');
-            const result = await analyzeXRay(imageFile);
-            
-            return {
-                ...result,
-                modelUsed: 'Gemini 2.5 Pro',
-                cost: 150,
-            };
-        } catch (error) {
-            console.error('❌ Cloud AI (Gemini) analysis failed:', error);
-            // Re-throw the more detailed error from analyzeXRay
-            throw error;
-        }
-    }
-}
-// --- End of merged cloudAI.ts logic ---
-
-
 class AIManager {
-    constructor() {
-        this.cloudAI = new CloudAI();
-    }
-
     /**
-     * Analyzes an image file. Uses a mock result in demo mode, otherwise uses the cloud AI.
+     * Analyzes an image file. Throws an error on failure.
      * @param {File} imageFile The image file to analyze.
      * @param {boolean} isDemoMode Whether to run in demo mode.
      * @returns {Promise<object>} The analysis result.
@@ -189,43 +169,18 @@ class AIManager {
 
         if (!navigator.onLine) {
             console.error('Offline: Cannot perform cloud analysis.');
-            return {
-                condition: 'ANALYSIS_UNAVAILABLE',
-                description: 'An internet connection is required for AI analysis. Please connect to a network and try again.',
-                isEmergency: true,
-            };
+            throw new Error('An internet connection is required for AI analysis. Please connect to a network and try again.');
         }
 
-        try {
-            return await this.cloudAI.analyzeImage(imageFile);
-        } catch (error) {
-            console.error('❌ AI analysis failed in AIManager:', error);
-            const errorMessage = error instanceof Error ? error.message : 'The AI service could not process the image. Please try again.';
-            return {
-                condition: 'ANALYSIS_FAILED',
-                description: errorMessage,
-                isEmergency: true,
-            };
-        }
+        // This will now throw an error on failure, which will be caught by the caller in App.tsx
+        return await performCloudAnalysis(imageFile);
     }
     
     /**
-     * Initializes the AI Manager. This is now a lightweight setup.
+     * Initializes the AI Manager.
      */
     async initialize() {
         console.log('Initializing AI Manager (Cloud-only mode)...');
-    }
-
-    /**
-     * Gets the current status of AI services.
-     */
-    getStatus() {
-        return {
-            cloud: {
-                available: navigator.onLine,
-                status: navigator.onLine ? 'connected' : 'offline'
-            },
-        };
     }
 }
 

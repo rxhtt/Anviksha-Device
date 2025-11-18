@@ -7,19 +7,16 @@ import ResultsScreen from './components/ResultsScreen';
 import RecordsScreen from './components/RecordsScreen';
 import DetailsScreen from './components/DetailsScreen';
 import ExitModal from './components/ExitModal';
-import AIManager from './services/aiManager.js'; // This is now cloud-only
+import AIManager from './services/aiManager.js'; // This is now the single source of truth
 import type { Screen, AnalysisResult } from './types';
 
 const aiManager = new AIManager();
 
 // Helper to normalize results from the AI service
 const normalizeAiResult = (data: any): Omit<AnalysisResult, 'id' | 'date'> => {
-  // Cloud result confidence is already 0-100
-  const confidence = data.confidence;
-
   return {
     condition: data.condition,
-    confidence: Math.min(100, Math.max(0, confidence)), // Clamp confidence 0-100
+    confidence: Math.min(100, Math.max(0, data.confidence ?? 0)), // Clamp confidence 0-100 and provide default
     description: data.description,
     details: data.details,
     treatment: data.treatment,
@@ -59,7 +56,7 @@ const App: React.FC = () => {
 
     // Initial check
     aiManager.initialize().then(status => {
-      console.log("AI Manager initialized:", status);
+      console.log("AI Manager initialized");
     });
 
     return () => {
@@ -129,14 +126,11 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // In Demo Mode, analysis is simulated. In normal mode, it uses the live AI.
     try {
+      // AIManager.analyzeImage now throws on failure, simplifying this block.
       const rawResult = await aiManager.analyzeImage(file, isDemoMode);
 
-      if (rawResult.condition === 'ANALYSIS_UNAVAILABLE' || rawResult.condition === 'ANALYSIS_FAILED') {
-        throw new Error(rawResult.description || 'AI analysis failed.');
-      }
-
+      // Normalization is still a good practice for safety.
       const normalizedData = normalizeAiResult(rawResult);
       
       const resultWithMetadata: AnalysisResult = {
