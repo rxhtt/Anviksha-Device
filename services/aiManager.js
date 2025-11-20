@@ -1,3 +1,4 @@
+
 const fileToBase64 = async (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -151,6 +152,16 @@ class AIManager {
         }
     }
 
+    // Helper to ensure JSON is clean (removes markdown code blocks if present)
+    _cleanJson(text) {
+        if (!text) return "{}";
+        let clean = text.trim();
+        if (clean.startsWith('```')) {
+            clean = clean.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+        }
+        return clean;
+    }
+
     async performTriage(triageInputs) {
         let imageBase64 = null;
         let mimeType = null;
@@ -177,7 +188,7 @@ class AIManager {
             config: { responseMimeType: "application/json" }
         });
 
-        return JSON.parse(resultText.trim());
+        return JSON.parse(this._cleanJson(resultText));
     }
 
     async analyzeImage(imageFile, modality = 'XRAY') {
@@ -187,7 +198,7 @@ class AIManager {
         const prompt = getPromptForModality(modality);
 
         const resultText = await this._callProxyServer({
-            model: 'gemini-2.5-pro', 
+            model: 'gemini-2.5-flash', // Updated to valid model name
             prompt: prompt,
             imageBase64: imageBase64,
             mimeType: imageFile.type,
@@ -208,11 +219,11 @@ class AIManager {
             }
         });
 
-        const result = JSON.parse(resultText.trim());
+        const result = JSON.parse(this._cleanJson(resultText));
         return {
             ...result,
             modality,
-            modelUsed: 'Gemini 2.5 Pro',
+            modelUsed: 'Gemini 2.5 Flash',
             cost: modality === 'MRI' || modality === 'CT' ? 250 : 150,
         };
     }
@@ -280,7 +291,7 @@ class AIManager {
             config: { responseMimeType: "application/json" }
         });
         
-        return JSON.parse(resultText.trim());
+        return JSON.parse(this._cleanJson(resultText));
     }
 
     async getTherapyResponse(message) {
