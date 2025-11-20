@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon } from './IconComponents.tsx';
 
 interface WelcomeScreenProps {
-  onStartCamera: () => void;
+  onOpenHub: () => void;
   onStartScan: (file: File) => void;
   onStartTriage: () => void;
   onShowRecords: () => void;
@@ -48,7 +48,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ image, title, subtitle, onCli
     </button>
 );
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartTriage, onShowRecords, onShowDetails, onOpenChat, onOpenPharmacy, onOpenTherapy }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpenHub, onStartScan, onStartTriage, onShowRecords, onShowDetails, onOpenChat, onOpenPharmacy, onOpenTherapy }) => {
     const galleryInputRef = useRef<HTMLInputElement>(null);
     
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +88,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
                 image="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80"
                 title="Full Body Scan"
                 subtitle="X-Ray, MRI, CT & More"
-                onClick={onStartCamera}
+                onClick={onOpenHub}
                 featured
                 color="bg-blue-900"
               />

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TriageIcon, ChecklistIcon, CameraIcon, ArrowLeftIcon, CameraOffIcon, InfoIcon } from './IconComponents.tsx';
 import type { TriageInputs } from '../types.ts';
@@ -49,6 +50,49 @@ const SegmentedControl: React.FC<{ options: string[], value: string, onChange: (
     </div>
 );
 
+const TriageIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm p-6">
+        <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden animate-[scaleUp_0.3s_ease-out_forwards]">
+            <div className="bg-emerald-500 p-8 text-center relative overflow-hidden">
+                <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-emerald-400 rounded-full blur-3xl opacity-50"></div>
+                <div className="w-20 h-20 mx-auto bg-white/10 backdrop-blur-md rounded-2xl text-white flex items-center justify-center text-4xl mb-4 shadow-inner relative z-10 border border-white/20">
+                    <TriageIcon />
+                </div>
+                <h2 className="text-2xl font-bold text-white relative z-10">Smart Triage</h2>
+                <p className="text-xs font-bold text-emerald-100 uppercase tracking-widest mt-1 relative z-10">Clinical Assessment</p>
+            </div>
+            
+            <div className="p-8">
+                <div className="mb-6">
+                     <p className="text-slate-600 text-sm font-medium leading-relaxed">
+                        This is a <strong>Symptom Checker</strong>.
+                    </p>
+                    <div className="my-4 h-px bg-slate-100"></div>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                        You use this when a patient walks in feeling sick (e.g., coughing, fever) but you <em>haven't run tests yet</em>.
+                    </p>
+                </div>
+                
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-3 mb-8">
+                     <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <ChecklistIcon />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">
+                        Acts like a Triage Nurse: calculates "Risk Score" to decide if they need a Scan.
+                    </p>
+                </div>
+
+                <button 
+                    onClick={onDismiss}
+                    className="mt-2 w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg shadow-slate-200 transition-all"
+                >
+                    Start Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading }) => {
     const [inputs, setInputs] = useState<TriageInputs>({
         coughDuration: 'None',
@@ -61,6 +105,8 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
     });
 
     const [showCamera, setShowCamera] = useState(false);
+    const [showIntro, setShowIntro] = useState(true);
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -128,6 +174,8 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50">
+            {showIntro && <TriageIntroModal onDismiss={() => setShowIntro(false)} />}
+
             <div className="px-1 mb-4">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                     Pre-X-Ray Screening

@@ -1,3 +1,4 @@
+
 export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings' | 'chat' | 'pharmacy' | 'therapy';
 
 export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
@@ -46,6 +47,13 @@ export interface ChatMessage {
   text: string;
   image?: string;
   timestamp: number;
+}
+
+export interface ChatSession {
+    id: string;
+    title: string;
+    messages: ChatMessage[];
+    timestamp: number;
 }
 
 export interface Medicine {

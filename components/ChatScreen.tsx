@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { SendIcon, MicIcon, UploadIcon, ArrowLeftIcon, InfoIcon, ChatBubbleIcon } from './IconComponents.tsx';
+import { SendIcon, MicIcon, UploadIcon, ArrowLeftIcon, InfoIcon, ChatBubbleIcon, MenuIcon, PlusIcon, MessageIcon, TrashIcon, HomeIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
-import type { ChatMessage } from '../types.ts';
+import type { ChatMessage, ChatSession } from '../types.ts';
 
 interface ChatScreenProps {
   onBack: () => void;
@@ -9,26 +10,101 @@ interface ChatScreenProps {
 }
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-        id: '1',
-        role: 'ai',
-        text: "Hello. I am Anviksha, your Medical Intelligence Assistant. I can analyze symptoms, explain reports, or provide clinical guidance. How can I assist you?",
-        timestamp: Date.now()
-    }
-  ]);
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+      try {
+          const saved = window.localStorage.getItem('anviksha_chat_sessions');
+          return saved ? JSON.parse(saved) : [];
+      } catch (e) { return []; }
+  });
+  
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  // Use window.SpeechRecognition or window.webkitSpeechRecognition
   const Recognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
   const recognitionRef = useRef<any>(null);
 
+  useEffect(() => {
+      if (!currentSessionId) {
+          if (sessions.length > 0) {
+              const recent = sessions[0];
+              setCurrentSessionId(recent.id);
+              setMessages(recent.messages);
+          } else {
+              startNewChat();
+          }
+      }
+  }, []);
+
+  useEffect(() => {
+      localStorage.setItem('anviksha_chat_sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  const startNewChat = () => {
+      const newId = Date.now().toString();
+      const initialMsg: ChatMessage = {
+        id: 'init',
+        role: 'ai',
+        text: "Hello. I am Dr. Anviksha. Ask me anything about your health, symptoms, or upload a medical report for analysis.",
+        timestamp: Date.now()
+      };
+      
+      const newSession: ChatSession = {
+          id: newId,
+          title: 'New Consultation',
+          messages: [initialMsg],
+          timestamp: Date.now()
+      };
+
+      setSessions(prev => [newSession, ...prev]);
+      setCurrentSessionId(newId);
+      setMessages([initialMsg]);
+      setIsSidebarOpen(false);
+  };
+
+  const switchSession = (id: string) => {
+      const session = sessions.find(s => s.id === id);
+      if (session) {
+          setCurrentSessionId(id);
+          setMessages(session.messages);
+          setIsSidebarOpen(false);
+      }
+  };
+
+  const deleteSession = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      const newSessions = sessions.filter(s => s.id !== id);
+      setSessions(newSessions);
+      if (currentSessionId === id) {
+          if (newSessions.length > 0) {
+              switchSession(newSessions[0].id);
+          } else {
+              startNewChat();
+          }
+      }
+  };
+
+  const groupSessions = () => {
+      const today = new Date().setHours(0,0,0,0);
+      const yesterday = new Date(Date.now() - 86400000).setHours(0,0,0,0);
+      
+      return {
+          today: sessions.filter(s => s.timestamp >= today),
+          yesterday: sessions.filter(s => s.timestamp < today && s.timestamp >= yesterday),
+          older: sessions.filter(s => s.timestamp < yesterday)
+      };
+  };
+
+  // Initialize Speech Recognition
   useEffect(() => {
       if (Recognition) {
           const recognition = new Recognition();
@@ -37,10 +113,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           recognition.lang = 'en-US';
           
           recognition.onstart = () => setIsListening(true);
+          
           recognition.onend = () => setIsListening(false);
+          
+          recognition.onerror = (event: any) => {
+              console.error("Speech recognition error:", event.error);
+              setIsListening(false);
+              if (event.error === 'not-allowed') {
+                  alert("Microphone access blocked. Please allow permission in browser settings.");
+              }
+          };
+
           recognition.onresult = (event: any) => {
               const transcript = event.results[0][0].transcript;
-              setInputText(prev => prev + (prev ? ' ' : '') + transcript);
+              if (transcript) {
+                  setInputText(prev => prev + (prev ? ' ' : '') + transcript);
+              }
           };
           
           recognitionRef.current = recognition;
@@ -68,23 +156,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           alert("Voice input is not supported in this browser.");
           return;
       }
-      
       if (isListening) {
           recognitionRef.current.stop();
       } else {
-          recognitionRef.current.start();
+          try {
+              recognitionRef.current.start();
+          } catch (e) {
+              console.error("Failed to start recognition:", e);
+          }
       }
   };
 
-  const speakText = (text: string) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      window.speechSynthesis.speak(utterance);
-  };
-
   const handleSend = async () => {
-      if ((!inputText.trim() && !selectedImage) || isLoading) return;
+      if ((!inputText.trim() && !selectedImage) || isLoading || !currentSessionId) return;
 
       const userMsg: ChatMessage = {
           id: Date.now().toString(),
@@ -94,16 +178,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           timestamp: Date.now()
       };
 
-      setMessages(prev => [...prev, userMsg]);
+      const updatedMessages = [...messages, userMsg];
+      setMessages(updatedMessages);
+      
+      setSessions(prev => prev.map(s => {
+          if (s.id === currentSessionId) {
+              return {
+                  ...s,
+                  messages: updatedMessages,
+                  title: s.messages.length <= 1 ? (inputText.slice(0, 25) || "Image Analysis") : s.title
+              };
+          }
+          return s;
+      }));
+
       setInputText('');
       setIsLoading(true);
-      
       setSelectedImage(null);
       setImagePreview(null);
 
       try {
           const responseText = await aiManager.sendChatMessage(userMsg.text, selectedImage);
-          
           const aiMsg: ChatMessage = {
               id: (Date.now() + 1).toString(),
               role: 'ai',
@@ -111,7 +206,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
               timestamp: Date.now()
           };
           
-          setMessages(prev => [...prev, aiMsg]);
+          const finalMessages = [...updatedMessages, aiMsg];
+          setMessages(finalMessages);
+          setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: finalMessages } : s));
+
       } catch (error) {
           const errorMsg: ChatMessage = {
               id: (Date.now() + 1).toString(),
@@ -125,79 +223,171 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
       }
   };
 
+  const groupedSessions = groupSessions();
+
   return (
-    <div className="flex flex-col h-full bg-slate-50">
-      <div className="px-4 py-4 bg-indigo-600 text-white rounded-b-[2rem] shadow-md flex items-center justify-between shrink-0 z-20">
-          <div className="flex items-center gap-4">
-              <button 
-                onClick={onBack} 
-                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
-              >
-                  <ArrowLeftIcon />
-              </button>
-              <div>
-                  <h1 className="text-lg font-bold tracking-tight">Dr. Anviksha</h1>
-                  <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-widest">AI Medical Consultant</p>
+    <div className="flex flex-col h-full bg-white relative overflow-hidden font-sans">
+      
+      {/* Voice Listening Overlay */}
+      {isListening && (
+        <div className="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
+             <div className="relative mb-8">
+                <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-50 duration-1000"></div>
+                <div className="absolute inset-0 bg-blue-400 rounded-full animate-pulse opacity-40 delay-75"></div>
+                <button 
+                    onClick={toggleVoiceInput}
+                    className="relative z-10 w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-2xl border-4 border-blue-400/30 text-5xl"
+                >
+                    <MicIcon />
+                </button>
+             </div>
+             <h3 className="text-white text-2xl font-bold tracking-tight mb-2 animate-pulse">Listening...</h3>
+             <p className="text-blue-200 text-sm font-medium">Speak your query clearly</p>
+             
+             <button 
+                onClick={toggleVoiceInput} 
+                className="mt-12 px-8 py-3 bg-white/10 rounded-full text-white font-bold text-sm hover:bg-white/20 transition-colors border border-white/10 backdrop-blur-sm"
+             >
+                 Cancel
+             </button>
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <div className={`absolute inset-y-0 left-0 z-50 w-[85%] sm:w-[75%] bg-[#171717] text-gray-100 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          
+          {/* Sidebar Header */}
+          <div className="p-4 flex items-center justify-between border-b border-white/10 bg-[#171717]">
+              <h2 className="font-bold text-lg text-white tracking-tight">History</h2>
+              <div className="flex items-center gap-2">
+                  <button onClick={startNewChat} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="New Chat">
+                      <PlusIcon />
+                  </button>
+                  <button onClick={() => setIsSidebarOpen(false)} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white">
+                      ✕
+                  </button>
               </div>
           </div>
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white">
-              <ChatBubbleIcon />
+
+          <div className="p-2 flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto pr-1 space-y-6 mt-2">
+                  {Object.entries(groupedSessions).map(([label, group]) => group.length > 0 && (
+                      <div key={label}>
+                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">{label}</h3>
+                          <div className="space-y-1">
+                              {group.map(session => (
+                                  <button 
+                                      key={session.id}
+                                      onClick={() => switchSession(session.id)}
+                                      className={`w-full text-left px-3 py-3 mx-1 rounded-lg flex items-center justify-between group transition-all ${currentSessionId === session.id ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+                                  >
+                                      <span className="text-sm truncate flex-1 pr-2">{session.title}</span>
+                                      <div 
+                                          onClick={(e) => deleteSession(e, session.id)}
+                                          className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-opacity"
+                                      >
+                                          <TrashIcon />
+                                      </div>
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+                  ))}
+              </div>
           </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Overlay */}
+      {isSidebarOpen && (
+          <div className="absolute inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
+      )}
+
+      {/* Header */}
+      <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between shrink-0 z-20 shadow-sm">
+          <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsSidebarOpen(true)} 
+                className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-600"
+              >
+                  <MenuIcon />
+              </button>
+          </div>
+          <div className="flex flex-col items-center">
+               <h1 className="text-base font-bold text-slate-800">Consultation</h1>
+               <span className="text-[10px] text-green-500 font-bold flex items-center gap-1">
+                   ● Online
+               </span>
+          </div>
+          <div className="flex items-center gap-2">
+              <button 
+                 onClick={onBack}
+                 className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-600"
+                 title="Home"
+              >
+                 <HomeIcon />
+              </button>
+              <button 
+                 onClick={startNewChat}
+                 className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-600"
+                 title="New Chat"
+              >
+                 <PlusIcon />
+              </button>
+          </div>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
           {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 ${
+                  <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 shadow-sm ${
                       msg.role === 'user' 
-                          ? 'bg-indigo-600 text-white rounded-br-none shadow-lg shadow-indigo-200' 
-                          : 'bg-white text-slate-800 rounded-bl-none shadow-sm border border-slate-100'
+                          ? 'bg-blue-600 text-white rounded-br-sm' 
+                          : 'bg-slate-100 text-slate-800 rounded-bl-sm'
                   }`}>
                       {msg.image && (
-                          <img src={msg.image} alt="Uploaded" className="w-full h-48 object-cover rounded-xl mb-3 bg-black/10" />
+                          <img src={msg.image} alt="Uploaded" className="w-full h-48 object-cover rounded-xl mb-3 border border-black/10" />
                       )}
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      
-                      {msg.role === 'ai' && (
-                          <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-end">
-                               <button 
-                                  onClick={() => speakText(msg.text)}
-                                  className="text-[10px] font-bold uppercase tracking-wide text-slate-400 hover:text-indigo-600 flex items-center gap-1"
-                               >
-                                  <MicIcon /> Read
-                               </button>
-                          </div>
-                      )}
+                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">{msg.text}</p>
                   </div>
               </div>
           ))}
           
           {isLoading && (
               <div className="flex justify-start">
-                  <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 flex gap-1.5 items-center">
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="bg-slate-100 px-5 py-4 rounded-2xl rounded-bl-sm flex gap-2 items-center">
+                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-75"></div>
+                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-150"></div>
                   </div>
               </div>
           )}
           <div ref={messagesEndRef} />
       </div>
 
-      <div className="bg-white border-t border-slate-100 p-3 pb-6">
+      {/* Input Area */}
+      <div className="bg-white p-3 pb-5 border-t border-slate-100">
           {imagePreview && (
-              <div className="mb-2 inline-flex relative">
-                  <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-slate-200" />
-                  <button 
-                      onClick={() => { setImagePreview(null); setSelectedImage(null); }}
-                      className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                  >
-                      ×
-                  </button>
+              <div className="mb-3 flex">
+                  <div className="relative">
+                      <img src={imagePreview} alt="Preview" className="h-20 w-20 object-cover rounded-xl border border-slate-200 shadow-sm" />
+                      <button 
+                          onClick={() => { setImagePreview(null); setSelectedImage(null); }}
+                          className="absolute -top-2 -right-2 bg-slate-800 text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-white text-xs font-bold"
+                      >
+                          ✕
+                      </button>
+                  </div>
               </div>
           )}
           
-          <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[1.5rem] border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+          <div className="flex items-center gap-2 bg-slate-100 p-2 pr-3 rounded-[1.8rem] shadow-inner">
+              <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-10 h-10 rounded-full bg-white text-slate-500 shadow-sm hover:text-blue-600 flex items-center justify-center transition-all shrink-0"
+              >
+                  <UploadIcon />
+              </button>
               <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -205,18 +395,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
                   className="hidden" 
                   accept="image/*"
               />
-              <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-10 h-10 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors shrink-0"
-              >
-                  <UploadIcon />
-              </button>
               
               <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Type symptoms or upload report..."
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 text-sm max-h-32 py-3 resize-none"
+                  placeholder="Ask Dr. Anviksha..."
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-500 text-[15px] max-h-24 py-3 px-2 resize-none font-medium"
                   rows={1}
                   onKeyDown={(e) => {
                       if(e.key === 'Enter' && !e.shiftKey) {
@@ -229,15 +413,15 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
               {inputText || selectedImage ? (
                   <button 
                       onClick={handleSend}
-                      className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md hover:bg-indigo-700 active:scale-95 transition-all shrink-0 mb-0.5"
+                      className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md hover:bg-blue-700 hover:scale-105 transition-all shrink-0"
                   >
-                      <div className="ml-0.5"><SendIcon /></div>
+                      <SendIcon />
                   </button>
               ) : (
                   <button 
                       onClick={toggleVoiceInput}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 mb-0.5 ${
-                          isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-900 text-white hover:bg-slate-700'
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                          isListening ? 'bg-red-500 text-white shadow-lg scale-110' : 'bg-slate-800 text-white hover:bg-slate-700'
                       }`}
                   >
                       <MicIcon />

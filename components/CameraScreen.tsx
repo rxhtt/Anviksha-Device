@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadIcon, CameraIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon, AlertIcon } from './IconComponents.tsx';
+import { UploadIcon, CameraIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon, RecordsIcon } from './IconComponents.tsx';
 
 interface CameraScreenProps {
   onStartScan: (file: File) => void;
@@ -7,12 +8,15 @@ interface CameraScreenProps {
   onBackToHome?: () => void;
   instructionText?: string; 
   title?: string; 
+  modality?: string;
 }
 
 const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackToHome, instructionText = "Align document or area within frame", title = "Scan" }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isPdf, setIsPdf] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,6 +24,8 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
   useEffect(() => {
     let stream: MediaStream | null = null;
     const enableCamera = async () => {
+      if (file) return; // Don't start camera if a file is already selected
+
       try {
         setCameraError(null);
 
@@ -46,21 +52,28 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
       }
     };
     
-    if (!imagePreview) enableCamera();
+    if (!imagePreview && !file) enableCamera();
     return () => {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
     };
-  }, [imagePreview]);
+  }, [imagePreview, file]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
-    if (selectedFile && selectedFile.type.startsWith('image/')) {
+    if (selectedFile) {
       setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(selectedFile);
+      
+      if (selectedFile.type === 'application/pdf') {
+          setIsPdf(true);
+          setImagePreview('pdf_placeholder');
+      } else if (selectedFile.type.startsWith('image/')) {
+          setIsPdf(false);
+          const reader = new FileReader();
+          reader.onloadend = () => setImagePreview(reader.result as string);
+          reader.readAsDataURL(selectedFile);
+      }
     }
   };
 
@@ -75,29 +88,36 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
             if (blob) {
                 const capturedFile = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
                 setFile(capturedFile);
+                setIsPdf(false);
                 setImagePreview(URL.createObjectURL(capturedFile));
             }
         }, 'image/jpeg', 0.95);
     }
   };
   
-  const handleRetake = () => { setImagePreview(null); setFile(null); }
+  const handleRetake = () => { 
+      setImagePreview(null); 
+      setFile(null); 
+      setIsPdf(false);
+  }
   const handleScan = () => { if (file) onStartScan(file); };
 
   return (
     <div className="flex flex-col h-full bg-black text-white -m-5 rounded-none sm:rounded-[2.5rem] overflow-hidden relative">
      
-      <div className="absolute top-14 left-0 right-0 z-10 text-center pointer-events-none">
-        {!cameraError && !imagePreview && (
-            <span className="bg-black/60 backdrop-blur-md text-white/90 px-4 py-1.5 rounded-full text-sm font-medium border border-white/10">
-                {title}: {instructionText}
-            </span>
-        )}
-      </div>
-
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
         {imagePreview ? (
-            <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
+            isPdf ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <div className="w-24 h-24 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center text-4xl mb-4">
+                        <RecordsIcon />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{file?.name}</h3>
+                    <p className="text-slate-400 text-sm">PDF Document Ready</p>
+                </div>
+            ) : (
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
+            )
         ) : (
             <>
                 {cameraError ? (
@@ -107,7 +127,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
                         </div>
                         <h3 className="text-white font-bold text-2xl mb-2">{cameraError}</h3>
                         <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
-                            Please allow camera permissions in your browser settings or upload an image directly.
+                            Please allow camera permissions or upload a file.
                         </p>
                         
                         <button 
@@ -115,7 +135,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
                             className="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-3 group transform active:scale-95"
                         >
                            <div className="bg-white/20 p-1.5 rounded-full"><UploadIcon /></div>
-                           Upload from Gallery
+                           Upload File
                         </button>
                     </div>
                 ) : (
@@ -142,7 +162,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
       </div>
       
       <canvas ref={canvasRef} className="hidden"></canvas>
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
 
       <div className="h-48 bg-black/80 backdrop-blur-xl flex flex-col justify-center px-8 pb-6 pt-2 border-t border-white/10">
          <div className="flex items-center justify-between max-w-md mx-auto w-full">
@@ -164,9 +184,9 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
             </div>
 
             <div className="flex items-center justify-center">
-                {imagePreview ? (
+                {file ? (
                     <button onClick={handleScan} className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.5)] active:scale-95 transition-transform">
-                         <div className="text-white text-3xl"><CameraIcon /></div>
+                         {isPdf ? <div className="text-white font-bold text-xs">ANALYZE</div> : <div className="text-white text-3xl"><CameraIcon /></div>}
                     </button>
                 ) : (
                      !cameraError && (

@@ -166,6 +166,8 @@ const App: React.FC = () => {
     if (currentScreen === 'analysis' && imageFile) runAnalysis(imageFile);
   }, [currentScreen, imageFile]);
 
+  const isFullScreenApp = ['chat', 'therapy', 'pharmacy'].includes(currentScreen);
+
   const renderScreen = () => {
     if (viewingRecordId && currentScreen === 'results') {
       const recordToView = patientRecords.find(r => r.id === viewingRecordId);
@@ -187,7 +189,7 @@ const App: React.FC = () => {
         if (selectedModality === 'DERMA') { instruction = "Capture Skin Condition"; title = "Scan Skin"; }
         if (selectedModality === 'MRI') { instruction = "Capture MRI Slide"; title = "Scan MRI"; }
         
-        return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={instruction} title={title} />;
+        return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={instruction} title={title} modality={selectedModality} />;
       case 'analysis':
         return <AnalysisScreen />;
       case 'results':
@@ -205,7 +207,7 @@ const App: React.FC = () => {
       case 'welcome':
       default:
         return <WelcomeScreen 
-                  onStartCamera={() => setCurrentScreen('hub')} 
+                  onOpenHub={() => setCurrentScreen('hub')} 
                   onStartScan={handleStartScan}
                   onStartTriage={() => setCurrentScreen('hub')} 
                   onShowRecords={() => setCurrentScreen('records')}
@@ -222,15 +224,17 @@ const App: React.FC = () => {
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
       <div className="relative h-full w-full sm:max-w-[430px] sm:h-[92vh] bg-white shadow-2xl sm:rounded-[2.5rem] overflow-hidden flex flex-col border border-slate-200/60 ring-8 ring-slate-900/5">
-        {currentScreen !== 'chat' && currentScreen !== 'pharmacy' && currentScreen !== 'therapy' && 
+        {!isFullScreenApp && currentScreen !== 'camera' && 
           <Header isOnline={isOnline} currentScreen={currentScreen} onBack={handleBack} />
         }
-        <main className="main-content flex-1 overflow-y-auto bg-white scroll-smooth">
-          <div key={currentScreen} className="screen-container min-h-full flex flex-col">
+        
+        <main className={`main-content flex-1 bg-white ${isFullScreenApp ? 'overflow-hidden flex flex-col' : 'overflow-y-auto scroll-smooth'}`}>
+          <div key={currentScreen} className={`screen-container ${isFullScreenApp ? 'h-full' : 'min-h-full'} flex flex-col`}>
             {renderScreen()}
           </div>
         </main>
-        {currentScreen !== 'camera' && currentScreen !== 'chat' && currentScreen !== 'pharmacy' && currentScreen !== 'therapy' && (
+
+        {!isFullScreenApp && currentScreen !== 'camera' && (
           <div className="absolute bottom-1 left-0 right-0 flex justify-center pointer-events-none">
             <div className="w-32 h-1 bg-slate-200 rounded-full mb-2"></div>
           </div>

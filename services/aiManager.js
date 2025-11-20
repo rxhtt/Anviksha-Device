@@ -1,9 +1,12 @@
 
+
+
 const fileToBase64 = async (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
+        // Handle both Data URLs (base64) for images and generic files
         resolve(reader.result.split(',')[1]);
       } else {
         reject(new Error('Failed to read file as data URL.'));
@@ -34,7 +37,7 @@ const getPromptForModality = (modality) => {
         case 'BLOOD':
         case 'GENETIC':
             return `
-            You are an expert Hematologist and Pathologist. Analyze this Lab Report.
+            You are an expert Hematologist and Pathologist. Analyze this Lab Report (Image or PDF).
             1. OCR the text. Identify CBC, Metabolic Panel, Lipid, or Genetic markers.
             2. Flag values outside reference ranges as 'Abnormal' or 'Critical'.
             3. Correlate abnormal values to specific differential diagnoses.
@@ -191,17 +194,17 @@ class AIManager {
         return JSON.parse(this._cleanJson(resultText));
     }
 
-    async analyzeImage(imageFile, modality = 'XRAY') {
+    async analyzeImage(file, modality = 'XRAY') {
         if (!navigator.onLine) throw new Error('Internet connection required.');
         
-        const imageBase64 = await fileToBase64(imageFile);
+        const imageBase64 = await fileToBase64(file);
         const prompt = getPromptForModality(modality);
 
         const resultText = await this._callProxyServer({
-            model: 'gemini-2.5-flash', // Updated to valid model name
+            model: 'gemini-2.5-flash',
             prompt: prompt,
             imageBase64: imageBase64,
-            mimeType: imageFile.type,
+            mimeType: file.type, // Support image/jpeg, image/png, application/pdf
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -257,32 +260,30 @@ class AIManager {
 
     async getPharmacySuggestions(symptoms) {
         const prompt = `
-        You are a highly educated and experienced Indian Pharmacist. 
+        You are an expert Pharmacist in India with deep knowledge of generic medicines (Jan Aushadhi) and rural availability.
         The user is describing symptoms: "${symptoms}".
         
         Your Task:
-        1. Analyze the symptoms.
-        2. Recommend the exact medicines (Tablets, Syrups, Ointments, etc.) that a pharmacy would dispense.
-        3. **MANDATORY**: For every branded medicine, suggest an exact "Jan Aushadhi" (Indian Generic) equivalent.
-        4. Provide accurate estimated prices in Indian Rupees (INR).
+        1. Recommend the most effective medicines available in Tier-2 and Tier-3 cities in India.
+        2. **CRITICAL**: For every branded medicine (e.g., Crocin, Dolo), you MUST provide the exact **Jan Aushadhi / Generic equivalent**.
+        3. Provide realistic, current MRP (Market Price) in INR.
+        4. Prioritize affordable, widely available options.
         
         Output Strict JSON format:
         {
-          "diagnosis": "Brief professional assessment of symptoms",
+          "diagnosis": "Brief assessment",
           "medicines": [
             {
               "name": "Brand Name (e.g., Dolo 650)",
-              "genericName": "Chemical Name (e.g., Paracetamol)",
-              "type": "Tablet/Syrup/etc",
-              "dosage": "e.g., 1 tab after food",
-              "price": 30 (estimated INR number for brand),
-              "genericPrice": 5 (estimated INR number for generic),
+              "genericName": "Chemical Name (e.g., Paracetamol 650mg)",
+              "type": "Tablet/Syrup/Ointment",
+              "dosage": "e.g., 1 tab post meals",
+              "price": 30 (estimated brand price INR),
+              "genericPrice": 5 (estimated PM Jan Aushadhi price INR),
               "explanation": "Why this medicine is needed"
             }
           ]
         }
-        
-        List at least 3-5 medicines if relevant (Painkillers, Antibiotics only if absolutely necessary/safe, Antacids, etc.).
         `;
 
         const resultText = await this._callProxyServer({
