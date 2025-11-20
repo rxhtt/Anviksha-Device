@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Header from './components/Header.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
@@ -120,14 +121,19 @@ const App: React.FC = () => {
         } else {
             setCurrentScreen('hub');
         }
-    } else if (currentScreen === 'camera' || currentScreen === 'triage') {
+    } else if (currentScreen === 'camera') {
       setCurrentScreen('hub');
+    } else if (currentScreen === 'triage') {
+      setCurrentScreen('welcome');
     } else if (currentScreen === 'hub') {
       setCurrentScreen('welcome');
     } else if (['records', 'details', 'chat', 'pharmacy', 'therapy'].includes(currentScreen)) {
       setCurrentScreen('welcome');
     } else if (currentScreen === 'triage-results') {
       setCurrentScreen('triage');
+    } else if (currentScreen === 'analysis') {
+      setIsLoading(false);
+      setCurrentScreen('camera'); // Allow user to cancel analysis and retake photo
     }
   };
 
@@ -150,6 +156,7 @@ const App: React.FC = () => {
     setError(null);
     try {
       const rawResult = await aiManager.analyzeImage(file, selectedModality);
+      // Check if user cancelled (changed screen) during await
       const normalizedData = normalizeAiResult(rawResult, selectedModality);
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
@@ -191,7 +198,7 @@ const App: React.FC = () => {
         
         return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={instruction} title={title} modality={selectedModality} />;
       case 'analysis':
-        return <AnalysisScreen />;
+        return <AnalysisScreen onCancel={handleBack} />;
       case 'results':
         return analysisResult && <ResultsScreen result={analysisResult} imageFile={imageFile} onNewAnalysis={handleNewAnalysis} onSaveRecord={handleSaveRecord} />;
       case 'records':
@@ -209,7 +216,7 @@ const App: React.FC = () => {
         return <WelcomeScreen 
                   onOpenHub={() => setCurrentScreen('hub')} 
                   onStartScan={handleStartScan}
-                  onStartTriage={() => setCurrentScreen('hub')} 
+                  onStartTriage={() => setCurrentScreen('triage')} 
                   onShowRecords={() => setCurrentScreen('records')}
                   onShowDetails={() => setCurrentScreen('details')}
                   onOpenChat={() => setCurrentScreen('chat')}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SendIcon, MicIcon, UploadIcon, ArrowLeftIcon, InfoIcon, ChatBubbleIcon, MenuIcon, PlusIcon, MessageIcon, TrashIcon, HomeIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
@@ -230,47 +229,56 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden font-sans">
       
-      {/* Voice Listening Overlay */}
+      {/* Voice Listening Overlay - Enhanced */}
       {isListening && (
-        <div className="absolute inset-0 z-[60] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
-             <div className="relative mb-8">
-                <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-50 duration-1000"></div>
-                <div className="absolute inset-0 bg-blue-400 rounded-full animate-pulse opacity-40 delay-75"></div>
+        <div className="absolute inset-0 z-[60] bg-gradient-to-br from-blue-900/95 to-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center transition-opacity duration-500 animate-fadeIn">
+             <div className="relative mb-10">
+                {/* Pulsing Circles */}
+                <div className="absolute inset-0 bg-blue-500 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-30"></div>
+                <div className="absolute inset-0 bg-blue-400 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-20 delay-300"></div>
+                <div className="absolute -inset-4 bg-indigo-500 rounded-full animate-pulse opacity-20 blur-xl"></div>
+                
                 <button 
                     onClick={toggleVoiceInput}
-                    className="relative z-10 w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-2xl border-4 border-blue-400/30 text-5xl"
+                    className="relative z-10 w-24 h-24 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-[0_0_40px_rgba(59,130,246,0.5)] border-4 border-blue-400/20 text-4xl"
                 >
                     <MicIcon />
                 </button>
              </div>
-             <h3 className="text-white text-2xl font-bold tracking-tight mb-2 animate-pulse">Listening...</h3>
-             <p className="text-blue-200 text-sm font-medium">Speak your query clearly</p>
              
-             <button 
-                onClick={toggleVoiceInput} 
-                className="mt-12 px-8 py-3 bg-white/10 rounded-full text-white font-bold text-sm hover:bg-white/20 transition-colors border border-white/10 backdrop-blur-sm"
-             >
-                 Cancel
-             </button>
+             <div className="text-center space-y-3">
+                <h3 className="text-white text-2xl font-bold tracking-tight animate-pulse">Listening...</h3>
+                <p className="text-blue-200/80 text-sm font-medium px-8">Speak your medical query clearly</p>
+             </div>
+             
+             <div className="absolute bottom-12 w-full flex justify-center">
+                 <button 
+                    onClick={toggleVoiceInput} 
+                    className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full text-white font-bold text-sm transition-all border border-white/10 backdrop-blur-md flex items-center gap-2"
+                 >
+                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                     Stop Recording
+                 </button>
+             </div>
         </div>
       )}
       
       {/* Permission Error Overlay */}
       {permissionError && (
-          <div className="absolute inset-0 z-[70] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-             <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
-                 <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+          <div className="absolute inset-0 z-[70] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+             <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl transform scale-100 animate-[scaleUp_0.3s_ease-out]">
+                 <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                      <MicIcon />
                  </div>
-                 <h3 className="text-lg font-bold text-slate-900 mb-2">Microphone Access Denied</h3>
-                 <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-                     Please allow microphone permissions in your browser settings to use voice commands.
+                 <h3 className="text-xl font-black text-slate-900 mb-2">Access Denied</h3>
+                 <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
+                     Please enable microphone access in your browser settings to use voice features.
                  </p>
                  <button 
                      onClick={() => setPermissionError(false)}
-                     className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors"
+                     className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg"
                  >
-                     Okay, I understand
+                     Understood
                  </button>
              </div>
           </div>

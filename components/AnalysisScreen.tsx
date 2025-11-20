@@ -1,7 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
 import { MicroscopeIcon } from './IconComponents.tsx';
 
-const AnalysisScreen: React.FC = () => {
+interface AnalysisScreenProps {
+    onCancel?: () => void;
+}
+
+const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ onCancel }) => {
     const [progress, setProgress] = useState(5);
     const [status, setStatus] = useState("Analyzing");
 
@@ -36,12 +41,21 @@ const AnalysisScreen: React.FC = () => {
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">{status}...</h2>
             <p className="text-slate-400 text-sm font-medium mb-8">Please wait while AI scans the image.</p>
             
-            <div className="w-64 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="w-64 h-1.5 bg-slate-100 rounded-full overflow-hidden mb-12">
                 <div 
                     className="h-full bg-blue-600 rounded-full transition-all duration-700 ease-out"
                     style={{ width: `${progress}%` }}
                 ></div>
             </div>
+
+            {onCancel && (
+                <button 
+                    onClick={onCancel}
+                    className="text-slate-400 text-sm font-bold hover:text-slate-600 transition-colors px-6 py-2 rounded-full hover:bg-slate-50"
+                >
+                    Cancel Analysis
+                </button>
+            )}
         </div>
     );
 };

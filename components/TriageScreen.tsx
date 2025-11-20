@@ -78,7 +78,7 @@ const TriageIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =>
                         <ChecklistIcon />
                     </div>
                     <p className="text-xs font-bold text-slate-700">
-                        It acts like a Triage Nurse: calculates "Risk Score" to decide if they need a Scan.
+                        Calculates "Risk Score" to decide if they need a Scan.
                     </p>
                 </div>
 
@@ -178,9 +178,9 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
 
             <div className="px-1 mb-4">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    Pre-X-Ray Screening
+                    Symptom Checklist
                 </h2>
-                <p className="text-xs text-slate-500 mt-1">AI triage based on symptoms & visual cues.</p>
+                <p className="text-xs text-slate-500 mt-1">Fill out the form below to assess risk.</p>
             </div>
 
             <div className="flex-grow overflow-y-auto pb-6 space-y-6 pr-1">

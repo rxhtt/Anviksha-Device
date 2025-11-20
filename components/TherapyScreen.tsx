@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeftIcon, TherapyIcon, SendIcon, MicIcon, MenuIcon, PlusIcon, MessageIcon, TrashIcon, HomeIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
@@ -197,47 +196,55 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
     return (
         <div className="flex flex-col h-full bg-[#f8fafc] relative overflow-hidden font-sans">
              
-             {/* Voice Listening Overlay */}
+             {/* Voice Listening Overlay - Enhanced */}
              {isListening && (
-                <div className="absolute inset-0 z-[60] bg-teal-950/95 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
-                    <div className="relative mb-8">
-                        <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-50 duration-1000"></div>
-                        <div className="absolute inset-0 bg-teal-400 rounded-full animate-pulse opacity-40 delay-75"></div>
+                <div className="absolute inset-0 z-[60] bg-gradient-to-b from-teal-900/95 to-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center transition-opacity duration-500 animate-fadeIn">
+                    <div className="relative mb-10">
+                        <div className="absolute inset-0 bg-teal-500 rounded-full animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite] opacity-30"></div>
+                        <div className="absolute inset-0 bg-teal-400 rounded-full animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite] opacity-20 delay-500"></div>
+                        <div className="absolute -inset-6 bg-teal-300/20 rounded-full blur-xl animate-pulse"></div>
+                        
                         <button 
                             onClick={toggleListening}
-                            className="relative z-10 w-24 h-24 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-2xl border-4 border-teal-400/30 text-5xl"
+                            className="relative z-10 w-24 h-24 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-[0_0_40px_rgba(20,184,166,0.4)] border-4 border-teal-400/30 text-4xl"
                         >
                             <MicIcon />
                         </button>
                     </div>
-                    <h3 className="text-white text-2xl font-serif font-bold tracking-wide mb-2 animate-pulse">Listening...</h3>
-                    <p className="text-teal-200 text-sm font-medium">I'm here. Take your time.</p>
                     
-                    <button 
-                        onClick={toggleListening} 
-                        className="mt-12 px-8 py-3 bg-white/10 rounded-full text-white font-bold text-sm hover:bg-white/20 transition-colors border border-white/10 backdrop-blur-sm"
-                    >
-                        Pause
-                    </button>
+                    <div className="text-center space-y-2">
+                        <h3 className="text-white text-2xl font-serif font-bold tracking-wide animate-pulse">Listening...</h3>
+                        <p className="text-teal-200/80 text-sm font-medium tracking-wide">I'm here. Take your time.</p>
+                    </div>
+                    
+                    <div className="absolute bottom-12 w-full flex justify-center">
+                        <button 
+                            onClick={toggleListening} 
+                            className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full text-white font-bold text-sm transition-all border border-white/10 backdrop-blur-md flex items-center gap-2"
+                        >
+                            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
+                            Pause Session
+                        </button>
+                    </div>
                 </div>
             )}
             
             {/* Permission Error Overlay */}
             {permissionError && (
-                <div className="absolute inset-0 z-[70] bg-teal-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-                    <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
-                        <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <div className="absolute inset-0 z-[70] bg-teal-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+                    <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl transform scale-100 animate-[scaleUp_0.3s_ease-out]">
+                        <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                             <MicIcon />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Microphone Access Denied</h3>
-                        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h3>
+                        <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
                             Please allow microphone permissions in your browser settings to use voice commands.
                         </p>
                         <button 
                             onClick={() => setPermissionError(false)}
-                            className="w-full py-3 bg-teal-900 text-white rounded-xl font-bold text-sm hover:bg-teal-800 transition-colors"
+                            className="w-full py-3.5 bg-teal-900 text-white rounded-xl font-bold text-sm hover:bg-teal-800 transition-colors shadow-lg"
                         >
-                            Okay, I understand
+                            Understood
                         </button>
                     </div>
                 </div>
