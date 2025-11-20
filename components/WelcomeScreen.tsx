@@ -1,39 +1,19 @@
 
 import React, { useRef } from 'react';
-import { StethoscopeIcon, CameraIcon, GalleryIcon, DemoIcon, RecordsIcon, SettingsIcon, TriageIcon } from './IconComponents.tsx';
-import type { ApiKeyStatus } from '../types.ts';
+import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon } from './IconComponents.tsx';
 
 interface WelcomeScreenProps {
   onStartCamera: () => void;
   onStartScan: (file: File) => void;
-  onStartDemo: () => void;
   onStartTriage: () => void;
   onShowRecords: () => void;
   onShowDetails: () => void;
-  onShowSettings: () => void;
-  apiKeyStatus: ApiKeyStatus;
 }
 
 interface StatCardProps {
   value: string;
   label: string;
 }
-
-const ApiKeyWarning: React.FC<{ status: ApiKeyStatus, onSettingsClick: () => void }> = ({ status, onSettingsClick }) => {
-    if (status === 'valid' || status === 'testing') return null;
-
-    return (
-        <button onClick={onSettingsClick} className="w-full mb-6 bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center justify-between shadow-sm active:scale-[0.98] transition-transform">
-            <div className="text-left">
-                <p className="font-bold text-sm">Setup Required</p>
-                <p className="text-xs opacity-80">Configure API Key to start.</p>
-            </div>
-            <div className="bg-red-200/50 p-2 rounded-full">
-                <SettingsIcon />
-            </div>
-        </button>
-    );
-};
 
 const StatCard: React.FC<StatCardProps> = ({ value, label }) => (
   <div className="flex flex-col items-start min-w-[90px] p-3 bg-white rounded-2xl border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
@@ -71,7 +51,7 @@ const ActionCard: React.FC<ActionCardProps> = ({ icon, title, description, onCli
     );
 };
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartDemo, onStartTriage, onShowRecords, onShowDetails, onShowSettings, apiKeyStatus }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartTriage, onShowRecords, onShowDetails }) => {
     const galleryInputRef = useRef<HTMLInputElement>(null);
     
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,16 +74,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
       <div className="mb-6 px-2">
         <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-1">Clinic Station</p>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">
-            Medical Triage <br/>& Analysis
+            Anviksha<br/>AI Hospital
         </h1>
       </div>
-
-      <ApiKeyWarning status={apiKeyStatus} onSettingsClick={onShowSettings} />
 
       <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x no-scrollbar">
         <StatCard value="AI-First" label="Triage" />
         <StatCard value="< 10s" label="Speed" />
-        <StatCard value="15+" label="Conditions" />
+        <StatCard value="Multi" label="Modalities" />
         <StatCard value="Local" label="Secure" />
       </div>
       
@@ -115,7 +93,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
             description="Symptom & Visual Triage"
             onClick={onStartTriage}
             primary
-            gradient="linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+            gradient="linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)"
             />
         </div>
         <ActionCard
@@ -133,30 +111,17 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
       </div>
       
       <div className="mt-auto">
-          <h3 className="text-sm font-bold text-slate-900 mb-3 px-2">Tools & Settings</h3>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-             <button onClick={onStartDemo} className="w-full flex items-center gap-4 p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors text-left">
-                <div className="p-2 bg-amber-100 text-amber-600 rounded-full"><DemoIcon /></div>
-                <div className="flex-1">
-                    <div className="font-semibold text-slate-900 text-sm">Demo Mode</div>
-                    <div className="text-xs text-slate-400">Try without an API Key</div>
-                </div>
+          <div className="flex gap-3">
+             <button onClick={onShowRecords} className="flex-1 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex flex-col items-center gap-2 hover:bg-slate-50">
+                <div className="text-purple-600"><RecordsIcon /></div>
+                <span className="text-xs font-bold text-slate-700">Records</span>
              </button>
-             <button onClick={onShowRecords} className="w-full flex items-center gap-4 p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors text-left">
-                <div className="p-2 bg-purple-100 text-purple-600 rounded-full"><RecordsIcon /></div>
-                <div className="flex-1">
-                    <div className="font-semibold text-slate-900 text-sm">Patient Records</div>
-                    <div className="text-xs text-slate-400">View saved reports</div>
-                </div>
-             </button>
-             <button onClick={onShowSettings} className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors text-left">
-                <div className="p-2 bg-slate-100 text-slate-600 rounded-full"><SettingsIcon /></div>
-                <div className="flex-1">
-                    <div className="font-semibold text-slate-900 text-sm">Settings</div>
-                    <div className="text-xs text-slate-400">API Configuration</div>
-                </div>
+             <button onClick={onShowDetails} className="flex-1 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex flex-col items-center gap-2 hover:bg-slate-50">
+                <div className="text-blue-600"><InfoIcon /></div>
+                <span className="text-xs font-bold text-slate-700">About</span>
              </button>
           </div>
+          <p className="text-[10px] text-slate-400 text-center mt-4">Version 2.1 • AI Powered</p>
       </div>
     </div>
   );

@@ -1,12 +1,14 @@
 
-export type Screen = 'welcome' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings';
+export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings';
 
-// Fix: Added the missing ApiKeyStatus type to resolve an import error.
 export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
+
+export type Modality = 'XRAY' | 'ECG' | 'BLOOD' | 'MRI' | 'CT' | 'DERMA' | 'GENERAL';
 
 export interface AnalysisResult {
   id: string;
   date: string;
+  modality: Modality;
   condition: string;
   confidence: number;
   description: string;
@@ -25,7 +27,7 @@ export interface TriageInputs {
   breathingDifficulty: boolean;
   sputum: boolean;
   weightLoss: boolean;
-  visualObservation?: File | null; // Photo of the patient/chest for visual distress signs
+  visualObservation?: File | null;
 }
 
 export interface TriageResult {

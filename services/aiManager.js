@@ -1,6 +1,6 @@
 
 // aiManager.js - Manages cloud-based AI analysis via Gemini
-// This is the single source of truth for all AI interactions.
+// Now supporting multi-modal Hospital AI (X-Ray, ECG, Blood, MRI, etc.)
 
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -27,280 +27,160 @@ const fileToGenerativePart = async (file) => {
   };
 };
 
-/**
- * Returns a mock analysis result for demo mode.
- * @returns {Promise<object>} A promise that resolves with the mock data.
- */
-const getDemoResult = () => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve({
-        condition: "PNEUMONIA",
-        confidence: 92,
-        description: "Opacity and consolidation observed in the lower lobe of the right lung, consistent with pneumonia.",
-        details: "The radiograph shows significant airspace opacity in the right lower lobe. Air bronchograms are visible, which is a classic sign of alveolar filling, strongly suggesting bacterial pneumonia. The cardiac silhouette and pleural spaces appear normal. No signs of tuberculosis or pneumothorax were found.",
-        treatment: "Immediate consultation with a physician is recommended. Standard treatment involves a course of antibiotics. Further testing, such as a sputum culture, may be required to identify the specific pathogen.",
-        isEmergency: true,
-        modelUsed: 'Demo Model',
-        cost: 0,
-      });
-    }, 2500); // Simulate analysis time
-  });
-};
+// Helper to get a specific system prompt based on modality
+const getPromptForModality = (modality) => {
+    const baseStructure = `
+    Output MUST be strict JSON with no markdown formatting.
+    Keys: 'condition' (ALL CAPS string), 'confidence' (0-100 int), 'description' (1 sentence), 'details' (detailed findings), 'treatment' (recommendation), 'isEmergency' (boolean).
+    `;
 
-/**
- * Returns a mock triage result for demo mode.
- */
-const getDemoTriageResult = () => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({
-                riskScore: 85,
-                recommendation: 'GET_XRAY',
-                reasoning: 'Patient exhibits high-risk symptoms including persistent productive cough (3+ weeks), difficulty breathing, and visible signs of respiratory distress (pale skin). These are strong indicators of Pneumonia or Tuberculosis.',
-                urgencyLabel: '🚨 High Probability of Serious Condition'
-            });
-        }, 2000);
-    });
-}
+    switch (modality) {
+        case 'ECG':
+            return `
+            You are an expert Cardiologist AI. Analyze this ECG/EKG image. 
+            1. Identify the rhythm (Sinus, Afib, VTach, etc.).
+            2. Look for ST elevation/depression, QT prolongation, or axis deviation.
+            3. Determine if there are signs of Ischemia or Infarction.
+            ${baseStructure}
+            `;
+        case 'BLOOD':
+            return `
+            You are an expert Hematologist AI. Analyze this image of a Blood Test Report.
+            1. OCR the text to identify key markers (CBC, Lipid, metabolic).
+            2. Identify values that are 'High', 'Low', or 'Critical' based on standard ranges.
+            3. Correlate abnormal values to suggest a diagnosis (e.g., Anemia, Infection, Diabetes).
+            ${baseStructure}
+            `;
+        case 'MRI':
+            return `
+            You are an expert Neuroradiologist AI. Analyze this MRI scan (likely Brain or Spine).
+            1. Look for tumors, lesions, bleeding, or stroke indicators (hyperintensities).
+            2. Check for structural abnormalities or demyelination.
+            ${baseStructure}
+            `;
+        case 'CT':
+            return `
+            You are an expert Radiologist AI. Analyze this CT Scan.
+            1. Look for fractures, internal bleeding, tumors, or organ enlargement.
+            2. Differentiate between contrast and non-contrast features if visible.
+            ${baseStructure}
+            `;
+        case 'DERMA':
+             return `
+            You are an expert Dermatologist AI. Analyze this skin condition image.
+            1. Evaluate asymmetry, border, color, diameter (ABCD rule).
+            2. Identify if it looks like Eczema, Psoriasis, Melanoma, or Infection.
+            ${baseStructure}
+            `;
+        case 'XRAY':
+        default:
+            return `
+            You are an expert Radiologist AI. Analyze this Chest X-Ray.
+            1. Look for Pneumonia, TB, Nodules, Effusion, Cardiomegaly, or Fractures.
+            ${baseStructure}
+            `;
+    }
+};
 
 class AIManager {
     _apiKey;
     _aiClient;
 
-    /**
-     * Initializes the AIManager with a user-provided API key.
-     * @param {string | null} apiKey The Gemini API key.
-     */
     constructor(apiKey) {
-        if (!apiKey) {
-            console.warn("AIManager initialized without an API key.");
-        }
         this._apiKey = apiKey;
-        this._aiClient = null; // Lazy initialization
+        this._aiClient = null;
     }
 
-    /**
-     * Initializes and returns the GoogleGenAI client instance.
-     * Throws an error if the API key is not configured.
-     * @private
-     * @returns {GoogleGenAI} The initialized AI client.
-     */
     _getAiClient() {
-        if (this._aiClient) {
-            return this._aiClient;
-        }
-        if (!this._apiKey) {
-            throw new Error('API Key is not configured. Please set it in the settings.');
-        }
+        if (this._aiClient) return this._aiClient;
+        
+        if (!this._apiKey) throw new Error('API Key is not configured.');
+        
         this._aiClient = new GoogleGenAI({ apiKey: this._apiKey });
         return this._aiClient;
     }
-    
-    /**
-     * Verifies if a given API key is valid by making a simple test call.
-     * @param {string} apiKey The API key to verify.
-     * @returns {Promise<boolean>} True if the key is valid, false otherwise.
-     */
-    static async verifyApiKey(apiKey) {
-        if (!apiKey) return false;
-        try {
-            const ai = new GoogleGenAI({ apiKey });
-            // A simple, low-cost model and prompt to verify the key.
-            await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-            return true;
-        } catch (error) {
-            console.error("API Key verification failed:", error);
-            return false;
-        }
+
+    async performTriage(triageInputs) {
+        if (!this._apiKey) throw new Error("API Key not configured.");
+        
+        return await this._performRealTriage(triageInputs, this._apiKey);
     }
 
-    /**
-     * Analyzes symptoms and optional visual observation to decide if X-ray is needed.
-     * @param {object} triageInputs 
-     * @param {boolean} isDemoMode 
-     */
-    async performTriage(triageInputs, isDemoMode = false) {
-        if (isDemoMode) return getDemoTriageResult();
-        if (!this._apiKey) throw new Error("API Key not configured.");
-
+    async _performRealTriage(triageInputs, apiKey) {
         try {
             const geminiAI = this._getAiClient();
             const parts = [];
-
-            // Add visual evidence if available
             if (triageInputs.visualObservation) {
-                const imagePart = await fileToGenerativePart(triageInputs.visualObservation);
-                parts.push(imagePart);
+                parts.push(await fileToGenerativePart(triageInputs.visualObservation));
             }
-
-            // Construct the textual prompt
-            let symptomDescription = `
-            Patient Symptoms:
-            - Cough Duration: ${triageInputs.coughDuration}
-            - Fever: ${triageInputs.fever ? 'Yes' : 'No'}
-            - Chest Pain: ${triageInputs.chestPain ? 'Yes' : 'No'}
-            - Difficulty Breathing: ${triageInputs.breathingDifficulty ? 'Yes' : 'No'}
-            - Bloody Sputum: ${triageInputs.sputum ? 'Yes' : 'No'}
-            - Weight Loss: ${triageInputs.weightLoss ? 'Yes' : 'No'}
-            `;
 
             const prompt = `
-            ${symptomDescription}
-
-            You are a strict medical triage AI. Your goal is to determine if this patient needs a Chest X-Ray based on their symptoms and visual appearance (if provided).
+            Patient Symptoms:
+            - Cough: ${triageInputs.coughDuration}, Fever: ${triageInputs.fever}, Chest Pain: ${triageInputs.chestPain}
+            - Breathing Diff: ${triageInputs.breathingDifficulty}, Sputum: ${triageInputs.sputum}, Weight Loss: ${triageInputs.weightLoss}
             
-            Use this logic:
-            1. Calculate a Risk Score (0-100) for serious lung pathologies (TB, Pneumonia, COPD, Lung Cancer).
-            2. Determine Recommendation:
-               - Score > 70: 'GET_XRAY' (Immediate need)
-               - Score > 40: 'CONSIDER_XRAY' (Monitor or investigate if symptoms persist)
-               - Score <= 40: 'NO_XRAY' (Likely minor/viral, home care)
-            
-            If an image is provided, look for visual signs of respiratory distress (tripoding, pallor, sweating, accessory muscle use) to increase the risk score.
-
-            Output STRICT JSON:
-            {
-                "riskScore": number,
-                "recommendation": "GET_XRAY" | "CONSIDER_XRAY" | "NO_XRAY",
-                "reasoning": "string (max 2 sentences)",
-                "urgencyLabel": "string (short headline like 'High Probability of Pneumonia')"
-            }
+            You are a medical triage AI. Calculate a Risk Score (0-100) for serious conditions based on these symptoms and optional visual cues (pallor, distress).
+            Output STRICT JSON: { "riskScore": number, "recommendation": "GET_XRAY" | "CONSIDER_XRAY" | "NO_XRAY", "reasoning": "string", "urgencyLabel": "string" }
             `;
-
             parts.push({ text: prompt });
 
             const response = await geminiAI.models.generateContent({
-                model: 'gemini-2.5-flash', // Flash is sufficient for triage text/visual
+                model: 'gemini-2.5-flash',
                 contents: { parts },
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            riskScore: { type: Type.INTEGER },
-                            recommendation: { type: Type.STRING, enum: ["GET_XRAY", "CONSIDER_XRAY", "NO_XRAY"] },
-                            reasoning: { type: Type.STRING },
-                            urgencyLabel: { type: Type.STRING }
-                        },
-                        required: ["riskScore", "recommendation", "reasoning", "urgencyLabel"]
-                    }
-                }
+                config: { responseMimeType: "application/json" }
             });
-            
             return JSON.parse(response.text.trim());
-
         } catch (error) {
             console.error("Triage error:", error);
             throw new Error("Failed to perform triage analysis.");
         }
     }
 
-    /**
-     * Analyzes an X-ray image using the Gemini API. Throws on failure.
-     * @private
-     * @param {File} imageFile The X-ray image file.
-     * @returns {Promise<object>} The analysis result from the API.
-     */
-    async _performCloudAnalysis(imageFile) {
+    async _performCloudAnalysis(imageFile, modality = 'XRAY') {
         try {
             const geminiAI = this._getAiClient();
             const imagePart = await fileToGenerativePart(imageFile);
-            
-            const prompt = `You are a specialized medical AI assistant with expertise in radiology. Your task is to analyze the provided chest X-ray image by following a rigorous, step-by-step process.
-
-Step 1: Systematic Analysis.
-Carefully examine the image for abnormalities in the lungs, heart, bones, and pleural space. Note any signs of: Consolidation, infiltrates, opacities, cavitary lesions, nodules, pleural effusion, pneumothorax, cardiomegaly, rib fractures, fibrosis, edema, masses, or other findings.
-
-Step 2: Formulate a Diagnosis.
-Based on your observations, determine the most likely primary condition from this list: Tuberculosis, Pneumonia, Atelectasis, Cardiomegaly, Effusion, Nodule/Mass, Pneumothorax, Fibrosis, Edema, Consolidation, Emphysema, Fracture, Hernia, Infiltration. If no abnormalities are found, classify it as 'Normal'.
-
-Step 3: Justify Your Findings & Provide a Recommendation.
-Explain your reasoning. What specific visual evidence supports your diagnosis? What is the recommended course of action?
-
-Step 4: Synthesize the Final JSON Output.
-Now, combine all your findings into a single JSON object. The response must be ONLY the JSON object, with no other text, explanations, or markdown formatting before or after it.
-
-The JSON object must have these exact keys:
-- 'condition': (string) The final diagnosis from the list in ALL CAPS.
-- 'confidence': (number) Your confidence score from 0 to 100.
-- 'description': (string) A brief, one-sentence summary of the key finding.
-- 'details': (string) Your detailed analysis and justification from Step 3.
-- 'treatment': (string) A general, recommended course of action.
-- 'isEmergency': (boolean) True if the condition requires immediate medical attention.`;
+            const prompt = getPromptForModality(modality);
 
             const response = await geminiAI.models.generateContent({
               model: 'gemini-2.5-pro',
-              contents: {
-                  parts: [
-                      imagePart,
-                      { text: prompt },
-                  ]
-              },
+              contents: { parts: [imagePart, { text: prompt }] },
               config: {
                   responseMimeType: "application/json",
                   responseSchema: {
                     type: Type.OBJECT,
                     properties: {
-                      condition: { type: Type.STRING, description: "The identified medical condition (e.g., 'PNEUMONIA')." },
-                      confidence: { type: Type.INTEGER, description: "Confidence level of the diagnosis from 0 to 100." },
-                      description: { type: Type.STRING, description: "A brief, one-sentence summary of the findings." },
-                      details: { type: Type.STRING, description: "A detailed paragraph explaining the findings and their implications."},
-                      treatment: { type: Type.STRING, description: "A recommended course of action or treatment." },
-                      isEmergency: { type: Type.BOOLEAN, description: "Indicates if the condition is an emergency." }
+                      condition: { type: Type.STRING },
+                      confidence: { type: Type.INTEGER },
+                      description: { type: Type.STRING },
+                      details: { type: Type.STRING },
+                      treatment: { type: Type.STRING },
+                      isEmergency: { type: Type.BOOLEAN }
                     },
                     required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
                   },
               },
             });
 
-            const jsonText = response.text.trim();
-            const result = JSON.parse(jsonText);
-            
+            const result = JSON.parse(response.text.trim());
             return {
                 ...result,
+                modality,
                 modelUsed: 'Gemini 2.5 Pro',
-                cost: 150,
+                cost: modality === 'MRI' || modality === 'CT' ? 250 : 150,
             };
             
         } catch (error) {
-            console.error('Error analyzing X-ray with Gemini API:', error);
-            let message = 'Failed to get analysis from AI service.';
-            if (error instanceof Error) {
-                if(error.message.toLowerCase().includes('api key')) {
-                    message = 'AI Service failed: The API Key is invalid or has insufficient permissions.';
-                } else if (error instanceof SyntaxError || error.message.includes('json')) {
-                    message = 'AI Service returned an invalid format. Could not parse the response.';
-                } else {
-                    message = `AI Service error: ${error.message}`;
-                }
-            }
-            throw new Error(message);
+            console.error('Analysis Error:', error);
+            throw new Error('AI Service failed to analyze image. Check API Key or Network.');
         }
     }
 
-    /**
-     * Analyzes an image file. Throws an error on failure.
-     * @param {File} imageFile The image file to analyze.
-     * @param {boolean} isDemoMode Whether to run in demo mode.
-     * @returns {Promise<object>} The analysis result.
-     */
-    async analyzeImage(imageFile, isDemoMode = false) {
-        if (isDemoMode) {
-            console.log('Running in Demo Mode...');
-            return getDemoResult();
-        }
-
-        if (!this._apiKey) {
-            throw new Error("Cannot perform analysis. The API Key is not configured.");
-        }
-
-        if (!navigator.onLine) {
-            console.error('Offline: Cannot perform cloud analysis.');
-            throw new Error('An internet connection is required for AI analysis. Please connect to a network and try again.');
-        }
-
-        return await this._performCloudAnalysis(imageFile);
+    async analyzeImage(imageFile, modality = 'XRAY') {
+        if (!this._apiKey) throw new Error("API Key is not configured.");
+        if (!navigator.onLine) throw new Error('Internet connection required.');
+        
+        return await this._performCloudAnalysis(imageFile, modality);
     }
 }
 
