@@ -1,9 +1,12 @@
-
-export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings';
+export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings' | 'chat' | 'pharmacy' | 'therapy';
 
 export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
 
-export type Modality = 'XRAY' | 'ECG' | 'BLOOD' | 'MRI' | 'CT' | 'DERMA' | 'GENERAL';
+export type Modality = 
+  | 'XRAY' | 'ECG' | 'BLOOD' | 'MRI' | 'CT' | 'DERMA' | 'GENERAL'
+  | 'DENTAL' | 'OPHTHAL' | 'ENT' | 'PEDIATRIC' | 'GYNE' | 'ORTHO' 
+  | 'UROLOGY' | 'GASTRO' | 'NEURO' | 'ONCO' | 'PATHOLOGY' | 'GENETIC'
+  | 'VITALS' | 'DIET' | 'MENTAL' | 'SLEEP' | 'PREGNANCY' | 'VACCINE';
 
 export interface AnalysisResult {
   id: string;
@@ -31,8 +34,31 @@ export interface TriageInputs {
 }
 
 export interface TriageResult {
-  riskScore: number; // 0-100
+  riskScore: number;
   recommendation: 'GET_XRAY' | 'CONSIDER_XRAY' | 'NO_XRAY';
   reasoning: string;
   urgencyLabel: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'ai';
+  text: string;
+  image?: string;
+  timestamp: number;
+}
+
+export interface Medicine {
+    name: string;
+    genericName: string;
+    type: string;
+    dosage: string;
+    price: number;
+    genericPrice: number;
+    explanation: string;
+}
+
+export interface PharmacyResult {
+    diagnosis: string;
+    medicines: Medicine[];
 }

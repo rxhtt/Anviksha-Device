@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WifiIcon, WifiOffIcon, ArrowLeftIcon } from './IconComponents.tsx';
 
@@ -13,7 +12,6 @@ const Header: React.FC<HeaderProps> = ({ isOnline, currentScreen, onBack }) => {
 
   return (
     <header className="no-print sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 text-slate-800 h-14 shrink-0 flex items-center justify-between px-4 transition-all">
-      {/* Left Section: Back Button */}
       <div className="w-20 flex justify-start">
           {showBackButton ? (
             <button 
@@ -24,14 +22,12 @@ const Header: React.FC<HeaderProps> = ({ isOnline, currentScreen, onBack }) => {
                 <span className="font-medium text-[17px]">Back</span>
             </button>
           ) : (
-              // Status Indicator when on Home
              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${isOnline ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
                 {isOnline ? <WifiIcon /> : <WifiOffIcon />}
              </div>
           )}
       </div>
 
-      {/* Center Section: Title */}
       <div className="flex-1 text-center">
         <h1 className="text-[17px] font-semibold tracking-tight text-slate-900">
             {currentScreen === 'welcome' ? 'Anviksha AI' : 
@@ -39,9 +35,7 @@ const Header: React.FC<HeaderProps> = ({ isOnline, currentScreen, onBack }) => {
         </h1>
       </div>
 
-      {/* Right Section: Balance */}
       <div className="w-20 flex justify-end">
-          {/* Placeholder for future right-side actions */}
       </div>
     </header>
   );

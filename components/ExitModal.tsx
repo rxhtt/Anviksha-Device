@@ -10,10 +10,8 @@ const ExitModal: React.FC<ExitModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
 
   const handleAttemptExit = () => {
-    // In a real app, this would be a secure check
     if (password === 'anviksha123') {
       alert('Kiosk mode exited. Device returning to normal operation.');
-      // This is where you would call a function to exit a true PWA kiosk mode.
       setPassword('');
       setError('');
       onClose();

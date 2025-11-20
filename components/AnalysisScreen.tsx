@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { MicroscopeIcon } from './IconComponents.tsx';
 
@@ -7,7 +6,6 @@ const AnalysisScreen: React.FC = () => {
     const [status, setStatus] = useState("Analyzing");
 
     useEffect(() => {
-        // Smooth progress simulation
         const timer = setInterval(() => {
             setProgress(old => {
                 if (old >= 95) return 95;

@@ -1,12 +1,53 @@
-
 import React from 'react';
 
-// --- Core UI Icons ---
+export const AnvikshaLogo: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#4f46e5" />
+                <stop offset="100%" stopColor="#06b6d4" />
+            </linearGradient>
+            <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+        </defs>
+        
+        <circle cx="50" cy="50" r="45" stroke="url(#logoGradient)" strokeWidth="2" strokeOpacity="0.2" />
+        <circle cx="50" cy="50" r="38" stroke="url(#logoGradient)" strokeWidth="1" strokeOpacity="0.1" />
+
+        <rect x="20" y="20" width="60" height="60" rx="16" fill="url(#logoGradient)" opacity="0.1" />
+        
+        <path d="M50 25 V75 M25 50 H75" stroke="url(#logoGradient)" strokeWidth="10" strokeLinecap="round" filter="url(#glowFilter)" />
+        <path d="M50 25 V75 M25 50 H75" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+        
+        <circle cx="50" cy="50" r="8" fill="white" />
+        <circle cx="50" cy="50" r="4" fill="#4f46e5" />
+    </svg>
+);
 
 export const ArrowLeftIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
   </svg>
+);
+
+export const ChatBubbleIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+  </svg>
+);
+
+export const SendIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+    </svg>
+);
+
+export const MicIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
 );
 
 export const CameraIcon: React.FC = () => (
@@ -21,13 +62,6 @@ export const CameraOffIcon: React.FC = () => (
         <path d="M15 10l4.55a2 2 0 01.95 1.666V18a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h7.05a2 2 0 011.666.95L15 10z" />
         <path d="M19 1L5 15" />
     </svg>
-);
-
-export const SettingsIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
 );
 
 export const WifiIcon: React.FC = () => (
@@ -60,12 +94,6 @@ export const RetakeIcon: React.FC = () => (
     </svg>
 );
 
-export const SaveIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-    </svg>
-);
-
 export const CheckCircleIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -77,8 +105,6 @@ export const AlertIcon: React.FC = () => (
         <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
 );
-
-// --- Medical Modality Icons (Enhanced) ---
 
 export const HeartIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -133,8 +159,6 @@ export const MicroscopeIcon: React.FC = () => (
   </svg>
 );
 
-// --- Dashboard / Menu Icons ---
-
 export const TriageIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -150,13 +174,6 @@ export const RecordsIcon: React.FC = () => (
 export const GalleryIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-export const DemoIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
@@ -190,46 +207,69 @@ export const UserIcon: React.FC = () => (
     </svg>
 );
 
-export const VirusIcon: React.FC = () => (
+export const ToothIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 5h2v6h-2V7zm0 8h2v2h-2v-2z" />
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+        <path d="M9 9h6" />
     </svg>
 );
 
-export const WindIcon: React.FC = () => (
+export const EyeIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2" />
+        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 );
 
-export const BrokenBoneIcon: React.FC = () => (
+export const BabyIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 4v16m-4-8h8" />
-        <path d="M8 8l-2 2 2 2M16 8l2 2-2 2" />
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
     </svg>
 );
 
-export const DropletIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/.svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2.69l5.66 5.66a8 8 0 11-11.32 0L12 2.69z" />
+export const DnaIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 2v20m4-20v20M6 6l12 4M6 14l12 4M6 18l12-12" />
     </svg>
 );
 
-export const CircleDotIcon: React.FC = () => (
+export const PillIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        <path d="M12 12h.01" />
+        <path d="M10.5 20.5l10-10a4.95 4.95 0 10-7-7l-10 10a4.95 4.95 0 107 7z" />
+        <path d="M8.5 8.5l7 7" />
     </svg>
 );
 
-export const LinesIcon: React.FC = () => (
+export const PharmacyCrossIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 6h16M4 12h16M4 18h16" />
+        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" strokeWidth="1.5" />
+        <path d="M12 7v10M7 12h10" strokeWidth="2.5" />
+    </svg>
+);
+
+export const TherapyIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3c-1.5 2-4 5-4 7s2 4 4 4 4-2 4-4-2.5-5-4-7z" />
+        <path d="M12 14c-2.5 0-5 1.5-6 4 0 1.5 2 3 6 3s6-1.5 6-3c-1-2.5-3.5-4-6-4z" />
+        <path d="M6 10C4 11 3 12.5 3 14" />
+        <path d="M18 10c2 1 3 2.5 3 4" />
+    </svg>
+);
+
+export const AppleIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+);
+
+export const WomanIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM12 14c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
     </svg>
 );
 
 export const StomachIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-1em w-1em" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 4C8.686 4 6 6.686 6 10c0 4 2 6 6 10s6-6 6-10c0-3.314-2.686-6-6-6z" />
+        <path d="M9 5.00003C9 3.00003 11 2 13 2C15 2 16 3.00003 16 4.00003C16 5.00003 15 6 15 7C15 8 16.5 9 17 10C17.5 11 18 12 18 14C18 18 15 21 11 21C7 21 5 19 5 15C5 11 7 10 8 9C9 8 9 7 9 5.00003Z" />
     </svg>
 );

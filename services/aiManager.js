@@ -1,16 +1,5 @@
-
-// aiManager.js - Manages cloud-based AI analysis via Gemini
-// Now supporting multi-modal Hospital AI (X-Ray, ECG, Blood, MRI, etc.)
-
-import { GoogleGenAI, Type } from "@google/genai";
-
-/**
- * Converts a File object to a GoogleGenAI.Part object.
- * @param {File} file The file to convert.
- * @returns {Promise<{inlineData: {data: string, mimeType: string}}>}
- */
-const fileToGenerativePart = async (file) => {
-  const base64EncodedDataPromise = new Promise((resolve, reject) => {
+const fileToBase64 = async (file) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
@@ -22,165 +11,299 @@ const fileToGenerativePart = async (file) => {
     reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
-  return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
-  };
 };
 
-// Helper to get a specific system prompt based on modality
 const getPromptForModality = (modality) => {
     const baseStructure = `
+    You are a Senior Chief Medical Officer AI.
+    Your output must be extremely accurate, using professional medical terminology (ICD-10 codes where relevant).
     Output MUST be strict JSON with no markdown formatting.
-    Keys: 'condition' (ALL CAPS string), 'confidence' (0-100 int), 'description' (1 sentence), 'details' (detailed findings), 'treatment' (recommendation), 'isEmergency' (boolean).
+    Keys: 'condition' (ALL CAPS string), 'confidence' (0-100 int), 'description' (clinical summary), 'details' (detailed findings), 'treatment' (clinical recommendation), 'isEmergency' (boolean).
     `;
 
     switch (modality) {
         case 'ECG':
             return `
-            You are an expert Cardiologist AI. Analyze this ECG/EKG image. 
-            1. Identify the rhythm (Sinus, Afib, VTach, etc.).
-            2. Look for ST elevation/depression, QT prolongation, or axis deviation.
-            3. Determine if there are signs of Ischemia or Infarction.
+            You are an expert Cardiologist. Analyze this ECG/EKG strip with high precision. 
+            1. Identify rhythm (Sinus, Afib, VTach, STEMI, NSTEMI).
+            2. Measure intervals (PR, QRS, QT). Look for ST elevation/depression.
+            3. Detect ischemia, infarction, or hypertrophy.
             ${baseStructure}
             `;
         case 'BLOOD':
+        case 'GENETIC':
             return `
-            You are an expert Hematologist AI. Analyze this image of a Blood Test Report.
-            1. OCR the text to identify key markers (CBC, Lipid, metabolic).
-            2. Identify values that are 'High', 'Low', or 'Critical' based on standard ranges.
-            3. Correlate abnormal values to suggest a diagnosis (e.g., Anemia, Infection, Diabetes).
+            You are an expert Hematologist and Pathologist. Analyze this Lab Report.
+            1. OCR the text. Identify CBC, Metabolic Panel, Lipid, or Genetic markers.
+            2. Flag values outside reference ranges as 'Abnormal' or 'Critical'.
+            3. Correlate abnormal values to specific differential diagnoses.
             ${baseStructure}
             `;
         case 'MRI':
-            return `
-            You are an expert Neuroradiologist AI. Analyze this MRI scan (likely Brain or Spine).
-            1. Look for tumors, lesions, bleeding, or stroke indicators (hyperintensities).
-            2. Check for structural abnormalities or demyelination.
-            ${baseStructure}
-            `;
         case 'CT':
+        case 'NEURO':
             return `
-            You are an expert Radiologist AI. Analyze this CT Scan.
-            1. Look for fractures, internal bleeding, tumors, or organ enlargement.
-            2. Differentiate between contrast and non-contrast features if visible.
+            You are an expert Neuroradiologist. Analyze this Scan (MRI/CT).
+            1. Identify anatomical structures. Look for masses, hemorrhage, ischemia, or edema.
+            2. For Brain: Check midline shift, ventricles, and sulci.
+            3. For Spine: Check alignment, discs, and spinal cord compression.
             ${baseStructure}
             `;
         case 'DERMA':
              return `
-            You are an expert Dermatologist AI. Analyze this skin condition image.
-            1. Evaluate asymmetry, border, color, diameter (ABCD rule).
-            2. Identify if it looks like Eczema, Psoriasis, Melanoma, or Infection.
+            You are an expert Dermatologist. Analyze this skin lesion.
+            1. Apply ABCD rule (Asymmetry, Border, Color, Diameter).
+            2. Distinguish between benign (nevus, seborrheic) and malignant (melanoma, carcinoma).
+            3. Assess for inflammatory conditions (Eczema, Psoriasis).
+            ${baseStructure}
+            `;
+        case 'DENTAL':
+            return `
+            You are an expert Dentist/Oral Surgeon. Analyze this X-ray or Intraoral photo.
+            1. Identify cavities (caries), impacted wisdom teeth, periodontitis, or abscesses.
+            2. Check bone levels and root health.
+            ${baseStructure}
+            `;
+        case 'OPHTHAL':
+            return `
+            You are an expert Ophthalmologist. Analyze this retinal scan or eye photo.
+            1. Look for diabetic retinopathy, glaucoma (cup-to-disc ratio), or cataracts.
+            2. Assess vascular health in fundus images.
+            ${baseStructure}
+            `;
+        case 'ENT':
+            return `
+            You are an Otolaryngologist. Analyze this Otoscope/Throat image.
+            1. Check tympanic membrane for infection/perforation.
+            2. Check tonsils for hypertrophy or exudate.
+            ${baseStructure}
+            `;
+        case 'PEDIATRIC':
+            return `
+            You are a Senior Pediatrician. Analyze this image regarding a child.
+            1. Assess growth indicators or visible symptoms (rash, deformity).
+            2. Provide age-appropriate differentials.
+            ${baseStructure}
+            `;
+        case 'ORTHO':
+            return `
+            You are an Orthopedic Surgeon. Analyze this Bone X-Ray/MRI.
+            1. Identify fractures (type: comminuted, hairline, etc.), dislocations, or arthritis.
+            2. Check joint space and alignment.
+            ${baseStructure}
+            `;
+        case 'GASTRO':
+            return `
+            You are a Gastroenterologist. Analyze this Endoscopy/Colonoscopy frame or abdominal scan.
+            1. Identify polyps, ulcers, inflammation, or masses.
+            ${baseStructure}
+            `;
+        case 'GYNE':
+        case 'PREGNANCY':
+            return `
+            You are an OB/GYN specialist. Analyze this Ultrasound or visual data.
+            1. For Fetal US: Check gestational sac, fetal pole, heartbeat.
+            2. For Gyne: Check ovaries, uterus for cysts/fibroids.
+            ${baseStructure}
+            `;
+        case 'PATHOLOGY':
+            return `
+            You are a Pathologist. Analyze this Histology slide.
+            1. Identify cell types, architecture, and nuclear atypia.
+            2. Grade malignancy if applicable.
             ${baseStructure}
             `;
         case 'XRAY':
         default:
             return `
-            You are an expert Radiologist AI. Analyze this Chest X-Ray.
-            1. Look for Pneumonia, TB, Nodules, Effusion, Cardiomegaly, or Fractures.
+            You are an expert Radiologist. Analyze this Chest X-Ray with high precision.
+            1. Check lungs for consolidation (Pneumonia), nodules, masses, or infiltrates (TB).
+            2. Assess cardiac silhouette size and mediastinum.
+            3. Check diaphragm and costophrenic angles for effusion.
             ${baseStructure}
             `;
     }
 };
 
 class AIManager {
-    _apiKey;
-    _aiClient;
-
-    constructor(apiKey) {
-        this._apiKey = apiKey;
-        this._aiClient = null;
+    constructor() {
+        // API Key is now managed on the server side
     }
 
-    _getAiClient() {
-        if (this._aiClient) return this._aiClient;
-        
-        if (!this._apiKey) throw new Error('API Key is not configured.');
-        
-        this._aiClient = new GoogleGenAI({ apiKey: this._apiKey });
-        return this._aiClient;
+    async _callProxyServer(payload) {
+        try {
+            const response = await fetch('/api/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || `Server error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data.text; 
+        } catch (error) {
+            console.error("AI Service Error:", error);
+            throw error;
+        }
     }
 
     async performTriage(triageInputs) {
-        if (!this._apiKey) throw new Error("API Key not configured.");
+        let imageBase64 = null;
+        let mimeType = null;
+
+        if (triageInputs.visualObservation) {
+            imageBase64 = await fileToBase64(triageInputs.visualObservation);
+            mimeType = triageInputs.visualObservation.type;
+        }
+
+        const prompt = `
+        Patient Symptoms:
+        - Cough: ${triageInputs.coughDuration}, Fever: ${triageInputs.fever}, Chest Pain: ${triageInputs.chestPain}
+        - Breathing Diff: ${triageInputs.breathingDifficulty}, Sputum: ${triageInputs.sputum}, Weight Loss: ${triageInputs.weightLoss}
         
-        return await this._performRealTriage(triageInputs, this._apiKey);
-    }
+        You are a Senior Triage Nurse AI. Calculate a Risk Score (0-100) based on these symptoms and visual cues.
+        Output STRICT JSON: { "riskScore": number, "recommendation": "GET_XRAY" | "CONSIDER_XRAY" | "NO_XRAY", "reasoning": "string", "urgencyLabel": "string" }
+        `;
 
-    async _performRealTriage(triageInputs, apiKey) {
-        try {
-            const geminiAI = this._getAiClient();
-            const parts = [];
-            if (triageInputs.visualObservation) {
-                parts.push(await fileToGenerativePart(triageInputs.visualObservation));
-            }
+        const resultText = await this._callProxyServer({
+            model: 'gemini-2.5-flash',
+            prompt: prompt,
+            imageBase64: imageBase64,
+            mimeType: mimeType,
+            config: { responseMimeType: "application/json" }
+        });
 
-            const prompt = `
-            Patient Symptoms:
-            - Cough: ${triageInputs.coughDuration}, Fever: ${triageInputs.fever}, Chest Pain: ${triageInputs.chestPain}
-            - Breathing Diff: ${triageInputs.breathingDifficulty}, Sputum: ${triageInputs.sputum}, Weight Loss: ${triageInputs.weightLoss}
-            
-            You are a medical triage AI. Calculate a Risk Score (0-100) for serious conditions based on these symptoms and optional visual cues (pallor, distress).
-            Output STRICT JSON: { "riskScore": number, "recommendation": "GET_XRAY" | "CONSIDER_XRAY" | "NO_XRAY", "reasoning": "string", "urgencyLabel": "string" }
-            `;
-            parts.push({ text: prompt });
-
-            const response = await geminiAI.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: { parts },
-                config: { responseMimeType: "application/json" }
-            });
-            return JSON.parse(response.text.trim());
-        } catch (error) {
-            console.error("Triage error:", error);
-            throw new Error("Failed to perform triage analysis.");
-        }
-    }
-
-    async _performCloudAnalysis(imageFile, modality = 'XRAY') {
-        try {
-            const geminiAI = this._getAiClient();
-            const imagePart = await fileToGenerativePart(imageFile);
-            const prompt = getPromptForModality(modality);
-
-            const response = await geminiAI.models.generateContent({
-              model: 'gemini-2.5-pro',
-              contents: { parts: [imagePart, { text: prompt }] },
-              config: {
-                  responseMimeType: "application/json",
-                  responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                      condition: { type: Type.STRING },
-                      confidence: { type: Type.INTEGER },
-                      description: { type: Type.STRING },
-                      details: { type: Type.STRING },
-                      treatment: { type: Type.STRING },
-                      isEmergency: { type: Type.BOOLEAN }
-                    },
-                    required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
-                  },
-              },
-            });
-
-            const result = JSON.parse(response.text.trim());
-            return {
-                ...result,
-                modality,
-                modelUsed: 'Gemini 2.5 Pro',
-                cost: modality === 'MRI' || modality === 'CT' ? 250 : 150,
-            };
-            
-        } catch (error) {
-            console.error('Analysis Error:', error);
-            throw new Error('AI Service failed to analyze image. Check API Key or Network.');
-        }
+        return JSON.parse(resultText.trim());
     }
 
     async analyzeImage(imageFile, modality = 'XRAY') {
-        if (!this._apiKey) throw new Error("API Key is not configured.");
         if (!navigator.onLine) throw new Error('Internet connection required.');
         
-        return await this._performCloudAnalysis(imageFile, modality);
+        const imageBase64 = await fileToBase64(imageFile);
+        const prompt = getPromptForModality(modality);
+
+        const resultText = await this._callProxyServer({
+            model: 'gemini-2.5-pro', 
+            prompt: prompt,
+            imageBase64: imageBase64,
+            mimeType: imageFile.type,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        condition: { type: "STRING" },
+                        confidence: { type: "INTEGER" },
+                        description: { type: "STRING" },
+                        details: { type: "STRING" },
+                        treatment: { type: "STRING" },
+                        isEmergency: { type: "BOOLEAN" }
+                    },
+                    required: ["condition", "confidence", "description", "details", "treatment", "isEmergency"],
+                },
+            }
+        });
+
+        const result = JSON.parse(resultText.trim());
+        return {
+            ...result,
+            modality,
+            modelUsed: 'Gemini 2.5 Pro',
+            cost: modality === 'MRI' || modality === 'CT' ? 250 : 150,
+        };
+    }
+
+    async sendChatMessage(message, imageFile = null) {
+        let imageBase64 = null;
+        let mimeType = null;
+        
+        if (imageFile) {
+            imageBase64 = await fileToBase64(imageFile);
+            mimeType = imageFile.type;
+        }
+
+        const prompt = `You are Anviksha AI, a Highly Advanced Medical Intelligence System.
+        Your goal is to provide accurate, scientifically-backed medical information.
+        Rules:
+        1. Be authoritative and professional.
+        2. Use medical terminology but explain it simply.
+        3. If analyzing an image, be extremely detailed.
+        4. Be helpful and direct.
+        
+        User Question: ${message}`;
+
+        return await this._callProxyServer({
+            model: 'gemini-2.5-flash',
+            prompt: prompt,
+            imageBase64: imageBase64,
+            mimeType: mimeType
+        });
+    }
+
+    async getPharmacySuggestions(symptoms) {
+        const prompt = `
+        You are a highly educated and experienced Indian Pharmacist. 
+        The user is describing symptoms: "${symptoms}".
+        
+        Your Task:
+        1. Analyze the symptoms.
+        2. Recommend the exact medicines (Tablets, Syrups, Ointments, etc.) that a pharmacy would dispense.
+        3. **MANDATORY**: For every branded medicine, suggest an exact "Jan Aushadhi" (Indian Generic) equivalent.
+        4. Provide accurate estimated prices in Indian Rupees (INR).
+        
+        Output Strict JSON format:
+        {
+          "diagnosis": "Brief professional assessment of symptoms",
+          "medicines": [
+            {
+              "name": "Brand Name (e.g., Dolo 650)",
+              "genericName": "Chemical Name (e.g., Paracetamol)",
+              "type": "Tablet/Syrup/etc",
+              "dosage": "e.g., 1 tab after food",
+              "price": 30 (estimated INR number for brand),
+              "genericPrice": 5 (estimated INR number for generic),
+              "explanation": "Why this medicine is needed"
+            }
+          ]
+        }
+        
+        List at least 3-5 medicines if relevant (Painkillers, Antibiotics only if absolutely necessary/safe, Antacids, etc.).
+        `;
+
+        const resultText = await this._callProxyServer({
+            model: 'gemini-2.5-flash',
+            prompt: prompt,
+            config: { responseMimeType: "application/json" }
+        });
+        
+        return JSON.parse(resultText.trim());
+    }
+
+    async getTherapyResponse(message) {
+        const prompt = `
+        You are Dr. Anviksha, a Doctorate-level Clinical Psychologist and Therapist with 30 years of experience. 
+        
+        User Message: "${message}"
+        
+        Your Goal: Provide the best possible therapeutic response, surpassing a human doctorate.
+        
+        Instructions:
+        1. **Adapt to User's Tone**: If they are sad, be empathetic and gentle. If they are angry, be calm and de-escalating. If they are casual, be friendly but professional.
+        2. **Deep Insight**: Do not just give generic advice. Analyze the underlying emotion and offer a profound perspective or a coping mechanism (CBT/DBT techniques).
+        3. **Conciseness**: Be impactful but not overly wordy.
+        4. **Safety**: If the user expresses self-harm, immediately provide helpline resources politely but firmly.
+
+        Output only the response text.
+        `;
+
+        return await this._callProxyServer({
+            model: 'gemini-2.5-flash',
+            prompt: prompt
+        });
     }
 }
 

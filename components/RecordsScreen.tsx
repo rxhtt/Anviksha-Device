@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { AnalysisResult } from '../types.ts';
 import { RecordsIcon, SearchIcon } from './IconComponents.tsx';
@@ -12,6 +11,10 @@ interface RecordsScreenProps {
 type SortOption = 'date_desc' | 'date_asc' | 'confidence_desc' | 'condition_asc';
 
 const RecordCard: React.FC<{ record: AnalysisResult, onViewRecord: (id: string) => void }> = ({ record, onViewRecord }) => {
+    const dateObj = new Date(record.date);
+    const dateStr = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
     return (
         <button 
             onClick={() => onViewRecord(record.id)}
@@ -24,7 +27,7 @@ const RecordCard: React.FC<{ record: AnalysisResult, onViewRecord: (id: string) 
                         {record.modality || 'GEN'}
                     </span>
                 </div>
-                <span className="text-xs text-slate-400 mt-0.5">{new Date(record.date).toLocaleDateString()} • {record.confidence}% Confidence</span>
+                <span className="text-xs text-slate-400 mt-0.5">{dateStr} at {timeStr} • {record.confidence}% Conf.</span>
             </div>
             <div className={`w-2.5 h-2.5 rounded-full ring-2 ring-white shadow-sm ${record.isEmergency ? 'bg-red-500' : 'bg-emerald-400'}`}></div>
         </button>
@@ -36,7 +39,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
     const [sortOption, setSortOption] = useState<SortOption>('date_desc');
 
     const filteredAndSortedRecords = useMemo(() => {
-        // 1. Filter
         let result = records.filter(record => {
             const query = searchQuery.toLowerCase();
             return (
@@ -46,7 +48,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
             );
         });
 
-        // 2. Sort
         result.sort((a, b) => {
             switch (sortOption) {
                 case 'date_desc':
@@ -68,7 +69,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
   return (
     <div className="flex flex-col h-full">
        <div className="mb-4">
-           {/* Search Bar */}
            <div className="relative mb-3">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
                 <input 
@@ -80,7 +80,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
                 />
            </div>
 
-           {/* Sort Chips */}
            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                <button 
                    onClick={() => setSortOption('date_desc')}
@@ -99,12 +98,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${sortOption === 'confidence_desc' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                >
                    Highest Confidence
-               </button>
-               <button 
-                   onClick={() => setSortOption('condition_asc')}
-                   className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${sortOption === 'condition_asc' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-               >
-                   Name (A-Z)
                </button>
            </div>
        </div>

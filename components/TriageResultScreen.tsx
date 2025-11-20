@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { TriageResult } from '../types.ts';
 import { AlertIcon, CheckCircleIcon, CameraIcon, ArrowLeftIcon, InfoIcon } from './IconComponents.tsx';
@@ -45,7 +44,6 @@ const TriageResultScreen: React.FC<TriageResultScreenProps> = ({ result, onProce
 
     return (
         <div className={`flex flex-col h-full -m-6 p-6 bg-gradient-to-b ${themeClass}`}>
-            {/* Hero Section */}
             <div className="flex flex-col items-center justify-center pt-6 pb-8 text-center">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl mb-4 ${accentColor} shadow-sm`}>
                     {icon}
@@ -54,7 +52,6 @@ const TriageResultScreen: React.FC<TriageResultScreenProps> = ({ result, onProce
                 <p className="text-slate-500 font-medium mt-1 text-sm max-w-xs mx-auto">{urgencyLabel}</p>
             </div>
 
-            {/* Metrics Card */}
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-6">
                 <div className="flex justify-between items-end mb-4 border-b border-slate-50 pb-4">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Risk Probability</span>
@@ -76,7 +73,6 @@ const TriageResultScreen: React.FC<TriageResultScreenProps> = ({ result, onProce
 
             <div className="flex-grow"></div>
 
-            {/* Action Buttons */}
             <div className="space-y-3 mt-4">
                 {showXRayBtn && (
                     <button 

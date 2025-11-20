@@ -1,6 +1,5 @@
-
 import React, { useRef } from 'react';
-import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon } from './IconComponents.tsx';
+import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon } from './IconComponents.tsx';
 
 interface WelcomeScreenProps {
   onStartCamera: () => void;
@@ -8,50 +7,48 @@ interface WelcomeScreenProps {
   onStartTriage: () => void;
   onShowRecords: () => void;
   onShowDetails: () => void;
+  onOpenChat: () => void;
+  onOpenPharmacy: () => void;
+  onOpenTherapy?: () => void;
 }
 
-interface StatCardProps {
-  value: string;
-  label: string;
+interface FeatureCardProps {
+    image?: string;
+    title: string;
+    subtitle: string;
+    onClick: () => void;
+    featured?: boolean;
+    color?: string;
+    icon?: React.ReactNode;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ value, label }) => (
-  <div className="flex flex-col items-start min-w-[90px] p-3 bg-white rounded-2xl border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-    <span className="text-lg font-bold text-slate-900 tracking-tight">{value}</span>
-    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mt-0.5">{label}</span>
-  </div>
+const FeatureCard: React.FC<FeatureCardProps> = ({ image, title, subtitle, onClick, featured, color = "bg-slate-900", icon }) => (
+    <button 
+        onClick={onClick}
+        className={`relative overflow-hidden rounded-[2rem] text-left group transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] active:scale-[0.98] ${featured ? 'col-span-2 h-64' : 'h-56'}`}
+    >
+        <div className={`absolute inset-0 ${color}`}>
+            {image && <img src={image} alt={title} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700" />}
+            <div className={`absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent`}></div>
+        </div>
+        <div className="absolute bottom-0 left-0 p-5 w-full z-10">
+             {featured && (
+                 <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full mb-3 border border-white/20">
+                     <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                     <span className="text-[10px] font-bold text-white uppercase tracking-wider">Recommended</span>
+                 </div>
+             )}
+             {icon && <div className="text-white mb-2 text-3xl opacity-90 drop-shadow-md">{icon}</div>}
+             <h3 className={`font-bold text-white leading-tight mb-0.5 ${featured ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
+             <p className="text-slate-300 text-[11px] font-medium leading-snug">{subtitle}</p>
+        </div>
+        <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 z-10">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </div>
+    </button>
 );
 
-interface ActionCardProps {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    onClick: () => void;
-    primary?: boolean;
-    gradient?: string;
-}
-
-const ActionCard: React.FC<ActionCardProps> = ({ icon, title, description, onClick, primary, gradient }) => {
-    return (
-        <button 
-            onClick={onClick} 
-            className={`relative w-full text-left p-5 rounded-[1.5rem] transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)] active:scale-[0.97] flex flex-col justify-between h-36 group overflow-hidden ${primary ? 'text-white' : 'bg-white text-slate-800 border border-slate-50'}`}
-            style={primary && gradient ? { background: gradient } : {}}
-        >
-            <div className={`text-3xl ${primary ? 'text-white/90' : 'text-blue-500 group-hover:scale-110 transition-transform duration-300'}`}>
-                {icon}
-            </div>
-            <div className="relative z-10">
-                <h3 className={`font-bold text-lg leading-tight mb-1 ${primary ? 'text-white' : 'text-slate-900'}`}>{title}</h3>
-                <p className={`text-xs font-medium ${primary ? 'text-white/70' : 'text-slate-400'}`}>{description}</p>
-            </div>
-            {/* Decorative blob for primary cards */}
-            {primary && <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>}
-        </button>
-    );
-};
-
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartTriage, onShowRecords, onShowDetails }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartScan, onStartTriage, onShowRecords, onShowDetails, onOpenChat, onOpenPharmacy, onOpenTherapy }) => {
     const galleryInputRef = useRef<HTMLInputElement>(null);
     
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +59,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
     };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-slate-50">
       <input 
         type="file" 
         ref={galleryInputRef} 
@@ -71,57 +68,89 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartCamera, onStartSca
         accept="image/*"
       />
       
-      <div className="mb-6 px-2">
-        <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-1">Clinic Station</p>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">
-            Anviksha<br/>AI Hospital
-        </h1>
+      <div className="px-5 pt-6 pb-4">
+        <div className="flex justify-between items-start">
+            <div>
+                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
+                    Anviksha<br/>AI Hospital
+                </h1>
+            </div>
+            <button onClick={onShowDetails} className="w-10 h-10 rounded-full bg-white hover:bg-slate-100 shadow-sm flex items-center justify-center text-slate-600 transition-colors">
+                <InfoIcon />
+            </button>
+        </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x no-scrollbar">
-        <StatCard value="AI-First" label="Triage" />
-        <StatCard value="< 10s" label="Speed" />
-        <StatCard value="Multi" label="Modalities" />
-        <StatCard value="Local" label="Secure" />
-      </div>
-      
-       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="col-span-2">
-            <ActionCard
-            icon={<TriageIcon />}
-            title="Start Screening"
-            description="Symptom & Visual Triage"
-            onClick={onStartTriage}
-            primary
-            gradient="linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)"
-            />
-        </div>
-        <ActionCard
-          icon={<CameraIcon />}
-          title="Scan X-Ray"
-          description="Use Camera"
-          onClick={onStartCamera}
-        />
-         <ActionCard
-          icon={<GalleryIcon />}
-          title="Upload"
-          description="From Gallery"
-          onClick={() => galleryInputRef.current?.click()}
-        />
-      </div>
-      
-      <div className="mt-auto">
-          <div className="flex gap-3">
-             <button onClick={onShowRecords} className="flex-1 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex flex-col items-center gap-2 hover:bg-slate-50">
-                <div className="text-purple-600"><RecordsIcon /></div>
-                <span className="text-xs font-bold text-slate-700">Records</span>
-             </button>
-             <button onClick={onShowDetails} className="flex-1 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform flex flex-col items-center gap-2 hover:bg-slate-50">
-                <div className="text-blue-600"><InfoIcon /></div>
-                <span className="text-xs font-bold text-slate-700">About</span>
-             </button>
+      <div className="flex-1 overflow-y-auto pb-8 no-scrollbar">
+          <div className="grid grid-cols-2 gap-3 px-3">
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80"
+                title="Full Body Scan"
+                subtitle="X-Ray, MRI, CT & More"
+                onClick={onStartCamera}
+                featured
+                color="bg-blue-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1584362917165-526a968579e8?auto=format&fit=crop&w=600&q=80"
+                title="Smart Triage"
+                subtitle="Symptom Check"
+                onClick={onStartTriage}
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80"
+                title="Records"
+                subtitle="History & Reports"
+                onClick={onShowRecords}
+                color="bg-indigo-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80"
+                title="Lab Reports"
+                subtitle="Analyze Blood/DNA"
+                onClick={() => galleryInputRef.current?.click()}
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&w=600&q=80"
+                title="Pharmacy"
+                subtitle="Indian Generics"
+                onClick={onOpenPharmacy}
+                color="bg-emerald-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=600&q=80"
+                title="Therapy"
+                subtitle="Mental Wellness"
+                onClick={onOpenTherapy || (() => {})}
+                color="bg-teal-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80"
+                title="AI Consult"
+                subtitle="Chat with Dr. Anviksha"
+                onClick={onOpenChat}
+                color="bg-violet-900"
+              />
+
+              <button 
+                onClick={onShowDetails}
+                className="col-span-2 mt-2 bg-slate-100 rounded-[2rem] p-5 flex flex-row items-center justify-center gap-3 border border-slate-200 hover:bg-slate-200 transition-colors group"
+              >
+                  <div className="text-blue-600"><CheckCircleIcon /></div>
+                  <div className="text-left">
+                    <span className="block text-xs font-bold text-slate-900 uppercase tracking-wide">Powered by FDA Approved Models</span>
+                    <span className="block text-[10px] text-slate-500">Tap for details & credits</span>
+                  </div>
+              </button>
+
           </div>
-          <p className="text-[10px] text-slate-400 text-center mt-4">Version 2.1 • AI Powered</p>
       </div>
     </div>
   );

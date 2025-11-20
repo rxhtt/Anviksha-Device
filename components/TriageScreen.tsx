@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { TriageIcon, ChecklistIcon, CameraIcon, ArrowLeftIcon, CameraOffIcon, InfoIcon } from './IconComponents.tsx';
 import type { TriageInputs } from '../types.ts';
@@ -9,7 +8,6 @@ interface TriageScreenProps {
     isLoading: boolean;
 }
 
-// Premium Toggle Card
 const ToggleCard: React.FC<{ label: string, value: boolean, onChange: (val: boolean) => void }> = ({ label, value, onChange }) => (
     <button 
         onClick={() => onChange(!value)}
@@ -30,7 +28,6 @@ const ToggleCard: React.FC<{ label: string, value: boolean, onChange: (val: bool
     </button>
 );
 
-// Premium Segmented Control
 const SegmentedControl: React.FC<{ options: string[], value: string, onChange: (val: string) => void }> = ({ options, value, onChange }) => (
     <div className="flex p-1 bg-slate-100/80 rounded-xl relative">
         {options.map((opt) => {
@@ -69,7 +66,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [capturedImagePreview, setCapturedImagePreview] = useState<string | null>(null);
 
-    // Camera Logic
     useEffect(() => {
         let stream: MediaStream | null = null;
         if (showCamera && !capturedImagePreview) {
@@ -132,7 +128,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50">
-            {/* Header */}
             <div className="px-1 mb-4">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                     Pre-X-Ray Screening
@@ -142,7 +137,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
 
             <div className="flex-grow overflow-y-auto pb-6 space-y-6 pr-1">
                 
-                {/* Section 1: Cough */}
                 <div className="bg-white rounded-2xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100">
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Cough Duration</label>
                     <SegmentedControl 
@@ -152,7 +146,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
                     />
                 </div>
 
-                {/* Section 2: Symptoms Grid */}
                 <div>
                     <h3 className="px-1 text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Key Symptoms</h3>
                     <div className="grid grid-cols-3 gap-3">
@@ -161,7 +154,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
                         <ToggleCard label="Breathing" value={inputs.breathingDifficulty} onChange={(v) => setInputs({...inputs, breathingDifficulty: v})} />
                         <ToggleCard label="Blood Sputum" value={inputs.sputum} onChange={(v) => setInputs({...inputs, sputum: v})} />
                         <ToggleCard label="Weight Loss" value={inputs.weightLoss} onChange={(v) => setInputs({...inputs, weightLoss: v})} />
-                        {/* Visual Toggle integrated into grid */}
                          <button 
                             onClick={() => capturedImagePreview ? null : setShowCamera(true)}
                             className={`relative group flex flex-col items-center justify-center p-3 h-24 rounded-2xl border transition-all duration-300 ease-out ${
@@ -195,7 +187,6 @@ const TriageScreen: React.FC<TriageScreenProps> = ({ onSubmit, onBack, isLoading
                 </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="pt-4 flex gap-3 shrink-0 bg-slate-50/50 z-10">
                  <button 
                     onClick={onBack}

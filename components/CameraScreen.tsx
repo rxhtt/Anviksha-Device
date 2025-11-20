@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadIcon, CameraIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon } from './IconComponents.tsx';
+import { UploadIcon, CameraIcon, CameraOffIcon, ArrowLeftIcon, RetakeIcon, AlertIcon } from './IconComponents.tsx';
 
 interface CameraScreenProps {
   onStartScan: (file: File) => void;
@@ -22,28 +21,27 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
     let stream: MediaStream | null = null;
     const enableCamera = async () => {
       try {
+        setCameraError(null);
+
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-           throw new Error("Camera API not available in this browser.");
+           throw new Error("Camera API not available.");
         }
 
-        // Use simpler constraints to avoid OverconstrainedError or permission issues on some devices
         stream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: 'environment' } 
         });
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          setCameraError(null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Camera access error:", err);
-        // More descriptive error handling
-        if (err instanceof DOMException && err.name === 'NotAllowedError') {
-            setCameraError("Camera access denied. Please enable permissions.");
-        } else if (err instanceof DOMException && err.name === 'NotFoundError') {
-             setCameraError("No camera found on this device.");
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            setCameraError("Camera access was denied.");
+        } else if (err.name === 'NotFoundError') {
+             setCameraError("No camera device found.");
         } else {
-            setCameraError("Camera unavailable. Please upload.");
+            setCameraError("Unable to access camera.");
         }
       }
     };
@@ -90,23 +88,34 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
     <div className="flex flex-col h-full bg-black text-white -m-5 rounded-none sm:rounded-[2.5rem] overflow-hidden relative">
      
       <div className="absolute top-14 left-0 right-0 z-10 text-center pointer-events-none">
-        <span className="bg-black/60 backdrop-blur-md text-white/90 px-4 py-1.5 rounded-full text-sm font-medium border border-white/10">
-            {title}: {instructionText}
-        </span>
+        {!cameraError && !imagePreview && (
+            <span className="bg-black/60 backdrop-blur-md text-white/90 px-4 py-1.5 rounded-full text-sm font-medium border border-white/10">
+                {title}: {instructionText}
+            </span>
+        )}
       </div>
 
-      {/* Viewfinder */}
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
         {imagePreview ? (
             <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
         ) : (
             <>
                 {cameraError ? (
-                    <div className="flex flex-col items-center text-slate-500 p-6 text-center">
-                        <CameraOffIcon />
-                        <span className="mt-4 text-sm font-medium text-white/70">{cameraError}</span>
-                        <button onClick={() => fileInputRef.current?.click()} className="mt-4 bg-white/10 px-4 py-2 rounded-full text-xs font-bold text-white hover:bg-white/20 transition-colors">
-                            Use Upload Instead
+                    <div className="flex flex-col items-center justify-center text-slate-500 p-8 text-center h-full w-full max-w-md mx-auto animate-fadeIn z-20">
+                        <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-400 border-2 border-slate-700 shadow-2xl">
+                            <CameraOffIcon />
+                        </div>
+                        <h3 className="text-white font-bold text-2xl mb-2">{cameraError}</h3>
+                        <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
+                            Please allow camera permissions in your browser settings or upload an image directly.
+                        </p>
+                        
+                        <button 
+                            onClick={() => fileInputRef.current?.click()} 
+                            className="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-3 group transform active:scale-95"
+                        >
+                           <div className="bg-white/20 p-1.5 rounded-full"><UploadIcon /></div>
+                           Upload from Gallery
                         </button>
                     </div>
                 ) : (
@@ -135,44 +144,52 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
       <canvas ref={canvasRef} className="hidden"></canvas>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
 
-      {/* Controls */}
-      <div className="h-48 bg-black/80 backdrop-blur-xl flex flex-col justify-center px-8 pb-6 pt-2">
+      <div className="h-48 bg-black/80 backdrop-blur-xl flex flex-col justify-center px-8 pb-6 pt-2 border-t border-white/10">
          <div className="flex items-center justify-between max-w-md mx-auto w-full">
-            <div>
+            
+            <div className="w-16 flex justify-center">
                 {imagePreview ? (
-                    <button onClick={handleRetake} className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-white hover:bg-slate-700 transition-colors">
-                        <RetakeIcon />
+                    <button onClick={handleRetake} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                         <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center"><RetakeIcon /></div>
+                         <span className="text-[10px] font-bold uppercase">Retake</span>
                     </button>
                 ) : (
-                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
-                        <UploadIcon />
-                    </button>
+                    !cameraError && (
+                        <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                            <div className="w-12 h-12 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center"><UploadIcon /></div>
+                            <span className="text-[10px] font-bold uppercase">Upload</span>
+                        </button>
+                    )
                 )}
             </div>
 
             <div className="flex items-center justify-center">
                 {imagePreview ? (
-                    <button onClick={handleScan} className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform">
-                         <div className="text-black text-2xl"><CameraIcon /></div>
+                    <button onClick={handleScan} className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.5)] active:scale-95 transition-transform">
+                         <div className="text-white text-3xl"><CameraIcon /></div>
                     </button>
                 ) : (
-                    <button 
-                        onClick={handleCapture} 
-                        disabled={!!cameraError}
-                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed group"
-                    >
-                        <div className="w-16 h-16 bg-white rounded-full group-active:scale-90 transition-transform"></div>
-                    </button>
+                     !cameraError && (
+                        <button 
+                            onClick={handleCapture} 
+                            className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-95 transition-transform group"
+                        >
+                            <div className="w-16 h-16 bg-white rounded-full group-active:scale-90 transition-transform"></div>
+                        </button>
+                    )
                 )}
             </div>
 
-             <div>
-                <button onClick={onBackToHome} className="w-12 h-12 rounded-full bg-transparent flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all">
-                    <ArrowLeftIcon />
+             <div className="w-16 flex justify-center">
+                <button onClick={onBackToHome} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-transparent border border-white/10 flex items-center justify-center hover:bg-white/10">
+                        <ArrowLeftIcon />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase">Cancel</span>
                 </button>
             </div>
          </div>
-         {error && <div className="text-center text-red-400 text-xs font-bold mt-2">{error}</div>}
+         {error && <div className="text-center text-red-400 text-xs font-bold mt-3 bg-red-500/10 py-1 rounded-lg">{error}</div>}
       </div>
     </div>
   );

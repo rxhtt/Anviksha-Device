@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Header from './components/Header.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
@@ -10,16 +9,12 @@ import RecordsScreen from './components/RecordsScreen.tsx';
 import DetailsScreen from './components/DetailsScreen.tsx';
 import TriageScreen from './components/TriageScreen.tsx';
 import TriageResultScreen from './components/TriageResultScreen.tsx';
+import ChatScreen from './components/ChatScreen.tsx';
+import PharmacyScreen from './components/PharmacyScreen.tsx';
+import TherapyScreen from './components/TherapyScreen.tsx';
+import SplashScreen from './components/SplashScreen.tsx';
 import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } from './types.ts';
-
-// ------------------------------------------------------------------
-// SECURE API KEY CONFIGURATION
-// The key is loaded from the environment. 
-// Ensure 'API_KEY' is set in your Vercel Project Settings.
-// ------------------------------------------------------------------
-const API_KEY = process.env.API_KEY as string;
-// ------------------------------------------------------------------
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
   return {
@@ -37,6 +32,7 @@ const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 
 };
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [selectedModality, setSelectedModality] = useState<Modality>('XRAY');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -57,8 +53,7 @@ const App: React.FC = () => {
   const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Initialize AI Manager directly with the secure key
-  const aiManager = useMemo(() => new AIManager(API_KEY), []);
+  const aiManager = useMemo(() => new AIManager(), []);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -119,13 +114,17 @@ const App: React.FC = () => {
   
   const handleBack = () => {
     setError(null);
-    if (currentScreen === 'results' && viewingRecordId) {
-      handleReturnToRecords();
+    if (currentScreen === 'results') {
+        if (viewingRecordId) {
+            handleReturnToRecords();
+        } else {
+            setCurrentScreen('hub');
+        }
     } else if (currentScreen === 'camera' || currentScreen === 'triage') {
       setCurrentScreen('hub');
     } else if (currentScreen === 'hub') {
       setCurrentScreen('welcome');
-    } else if (['records', 'details'].includes(currentScreen)) {
+    } else if (['records', 'details', 'chat', 'pharmacy', 'therapy'].includes(currentScreen)) {
       setCurrentScreen('welcome');
     } else if (currentScreen === 'triage-results') {
       setCurrentScreen('triage');
@@ -165,7 +164,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (currentScreen === 'analysis' && imageFile) runAnalysis(imageFile);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScreen, imageFile]);
 
   const renderScreen = () => {
@@ -198,6 +196,12 @@ const App: React.FC = () => {
         return <RecordsScreen records={patientRecords} onViewRecord={handleViewRecord} onBackToHome={handleBack} />;
       case 'details':
         return <DetailsScreen onBack={handleBack} />;
+      case 'chat':
+        return <ChatScreen onBack={handleBack} aiManager={aiManager} />;
+      case 'pharmacy':
+        return <PharmacyScreen onBack={handleBack} aiManager={aiManager} />;
+      case 'therapy':
+        return <TherapyScreen onBack={handleBack} aiManager={aiManager} />;
       case 'welcome':
       default:
         return <WelcomeScreen 
@@ -206,20 +210,27 @@ const App: React.FC = () => {
                   onStartTriage={() => setCurrentScreen('hub')} 
                   onShowRecords={() => setCurrentScreen('records')}
                   onShowDetails={() => setCurrentScreen('details')}
+                  onOpenChat={() => setCurrentScreen('chat')}
+                  onOpenPharmacy={() => setCurrentScreen('pharmacy')}
+                  onOpenTherapy={() => setCurrentScreen('therapy')}
                 />;
     }
   };
 
   return (
     <div className="bg-slate-100 h-screen w-screen flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      
       <div className="relative h-full w-full sm:max-w-[430px] sm:h-[92vh] bg-white shadow-2xl sm:rounded-[2.5rem] overflow-hidden flex flex-col border border-slate-200/60 ring-8 ring-slate-900/5">
-        <Header isOnline={isOnline} currentScreen={currentScreen} onBack={handleBack} />
-        <main className="main-content flex-1 p-5 overflow-y-auto bg-slate-50/50 scroll-smooth">
+        {currentScreen !== 'chat' && currentScreen !== 'pharmacy' && currentScreen !== 'therapy' && 
+          <Header isOnline={isOnline} currentScreen={currentScreen} onBack={handleBack} />
+        }
+        <main className="main-content flex-1 overflow-y-auto bg-white scroll-smooth">
           <div key={currentScreen} className="screen-container min-h-full flex flex-col">
             {renderScreen()}
           </div>
         </main>
-        {currentScreen !== 'camera' && (
+        {currentScreen !== 'camera' && currentScreen !== 'chat' && currentScreen !== 'pharmacy' && currentScreen !== 'therapy' && (
           <div className="absolute bottom-1 left-0 right-0 flex justify-center pointer-events-none">
             <div className="w-32 h-1 bg-slate-200 rounded-full mb-2"></div>
           </div>
