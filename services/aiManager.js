@@ -1,12 +1,15 @@
 
 
 
+
+
 const fileToBase64 = async (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
         // Handle both Data URLs (base64) for images and generic files
+        // This correctly separates "data:application/pdf;base64," from the actual data
         resolve(reader.result.split(',')[1]);
       } else {
         reject(new Error('Failed to read file as data URL.'));

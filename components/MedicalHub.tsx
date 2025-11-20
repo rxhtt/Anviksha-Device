@@ -52,71 +52,69 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md transition-opacity animate-fadeIn" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md transition-opacity animate-fadeIn" onClick={onClose}></div>
 
-            {/* Card Container */}
-            <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-scaleUp border border-white/20">
+            {/* Card Container - Redesigned Layout */}
+            <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp border border-white/20">
                 
                 {/* Header */}
-                <div className={`p-6 ${bgClass} relative shrink-0 text-center border-b border-black/5`}>
-                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-t-[2rem]">
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-                    </div>
-
-                    <div className={`w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center text-3xl shadow-lg mb-3 ${textClass} relative z-10`}>
+                <div className="p-8 pb-6 bg-white shrink-0 text-center relative">
+                    <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-slate-100 mb-4 ${color} ring-4 ring-white`}>
                         {icon}
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 relative z-10">{title}</h3>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{title}</h3>
+                    <div className="h-1 w-12 bg-slate-100 mx-auto rounded-full"></div>
                     
                     <button 
                         onClick={onClose}
-                        className="absolute top-4 right-4 w-8 h-8 bg-white/50 hover:bg-white rounded-full flex items-center justify-center text-slate-600 transition-all z-20"
+                        className="absolute top-6 right-6 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition-all"
                     >
                         ✕
                     </button>
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                <div className="flex-1 overflow-y-auto px-8 pb-4">
                     
-                    <div className="space-y-2">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> 
-                            Protocol & Instructions
-                        </h4>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-sm font-medium text-slate-700 leading-relaxed">
-                            {instruction}
+                    <div className="space-y-6">
+                        <div className="relative pl-4 border-l-2 border-slate-100">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Protocol</h4>
+                            <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                                {instruction}
+                            </p>
                         </div>
-                    </div>
 
-                    {explanation && (
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                                AI Technology
-                            </h4>
-                            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 text-xs text-slate-600 leading-relaxed">
-                                {explanation}
+                        {explanation && (
+                            <div className="relative pl-4 border-l-2 border-blue-100">
+                                <h4 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">AI Analysis</h4>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    {explanation}
+                                </p>
+                            </div>
+                        )}
+                        
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex gap-3 items-start">
+                            <div className="text-slate-400 mt-0.5"><InfoIcon /></div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-slate-700">File Support</p>
+                                <p className="text-[10px] text-slate-500 leading-snug">
+                                    • High Quality Images (JPG, PNG)<br/>
+                                    • Medical Documents (PDF)<br/>
+                                    • Ensure data is anonymized
+                                </p>
                             </div>
                         </div>
-                    )}
-                    
-                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex gap-2 items-start">
-                        <div className="text-amber-500 mt-0.5"><InfoIcon /></div>
-                        <p className="text-[10px] text-amber-800 font-semibold leading-snug">
-                            Ensure patient data is anonymized. Supports Images (JPG, PNG) and Documents (PDF).
-                        </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 bg-white border-t border-slate-100 shrink-0">
+                <div className="p-6 bg-white border-t border-slate-50 shrink-0">
                     <button 
                         onClick={onConfirm} 
-                        className="w-full py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] transition-all text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] transition-all text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 flex items-center justify-center gap-3 group"
                     >
-                        <CameraIcon /> <span>Proceed to Capture / Upload</span>
+                        <div className="bg-white/20 p-1 rounded-full group-hover:bg-white/30 transition-colors"><CameraIcon /></div>
+                        <span>Proceed to Capture / Upload</span>
                     </button>
                 </div>
             </div>
@@ -129,8 +127,8 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
 }
 
 const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm p-6">
-        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden animate-scaleUp shadow-2xl">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm p-6">
+        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden animate-scaleUp shadow-2xl border border-white/10">
             <div className="bg-blue-600 p-8 text-center relative overflow-hidden">
                 <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-blue-500 rounded-full blur-3xl opacity-50"></div>
                 <div className="w-20 h-20 mx-auto bg-white/10 backdrop-blur-md rounded-2xl text-white flex items-center justify-center text-4xl mb-4 shadow-inner relative z-10 border border-white/20">
@@ -156,7 +154,7 @@ const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
                         <MicroscopeIcon />
                     </div>
                     <p className="text-xs font-bold text-slate-700">
-                        Acts like a Radiologist or Pathologist.
+                        It acts like a Radiologist or Pathologist.
                     </p>
                 </div>
 

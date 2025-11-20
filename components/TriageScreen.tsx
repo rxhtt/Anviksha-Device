@@ -78,7 +78,7 @@ const TriageIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =>
                         <ChecklistIcon />
                     </div>
                     <p className="text-xs font-bold text-slate-700">
-                        Acts like a Triage Nurse: calculates "Risk Score" to decide if they need a Scan.
+                        It acts like a Triage Nurse: calculates "Risk Score" to decide if they need a Scan.
                     </p>
                 </div>
 

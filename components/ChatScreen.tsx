@@ -26,6 +26,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,8 +120,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           recognition.onerror = (event: any) => {
               console.error("Speech recognition error:", event.error);
               setIsListening(false);
-              if (event.error === 'not-allowed') {
-                  alert("Microphone access blocked. Please allow permission in browser settings.");
+              if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+                  setPermissionError(true);
               }
           };
 
@@ -152,6 +153,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
   };
 
   const toggleVoiceInput = () => {
+      setPermissionError(false);
       if (!recognitionRef.current) {
           alert("Voice input is not supported in this browser.");
           return;
@@ -230,7 +232,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
       
       {/* Voice Listening Overlay */}
       {isListening && (
-        <div className="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
+        <div className="absolute inset-0 z-[60] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
              <div className="relative mb-8">
                 <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-50 duration-1000"></div>
                 <div className="absolute inset-0 bg-blue-400 rounded-full animate-pulse opacity-40 delay-75"></div>
@@ -251,6 +253,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
                  Cancel
              </button>
         </div>
+      )}
+      
+      {/* Permission Error Overlay */}
+      {permissionError && (
+          <div className="absolute inset-0 z-[70] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+             <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
+                 <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                     <MicIcon />
+                 </div>
+                 <h3 className="text-lg font-bold text-slate-900 mb-2">Microphone Access Denied</h3>
+                 <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                     Please allow microphone permissions in your browser settings to use voice commands.
+                 </p>
+                 <button 
+                     onClick={() => setPermissionError(false)}
+                     className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors"
+                 >
+                     Okay, I understand
+                 </button>
+             </div>
+          </div>
       )}
 
       {/* Sidebar */}

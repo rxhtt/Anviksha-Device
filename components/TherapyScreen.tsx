@@ -37,6 +37,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [isListening, setIsListening] = useState(false);
+    const [permissionError, setPermissionError] = useState(false);
     
     const Recognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognitionRef = useRef<any>(null);
@@ -120,8 +121,8 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
             recognition.onerror = (e: any) => {
                 console.error("Speech error:", e.error);
                 setIsListening(false);
-                if (e.error === 'not-allowed') {
-                     alert("Microphone access blocked. Please enable it in your browser settings.");
+                if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+                     setPermissionError(true);
                 }
             };
             
@@ -137,6 +138,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
     }, [Recognition]);
 
     const toggleListening = () => {
+        setPermissionError(false);
         if (!recognitionRef.current) {
             alert("Voice input not supported in this browser.");
             return;
@@ -197,7 +199,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
              
              {/* Voice Listening Overlay */}
              {isListening && (
-                <div className="absolute inset-0 z-[60] bg-teal-950/90 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
+                <div className="absolute inset-0 z-[60] bg-teal-950/95 backdrop-blur-md flex flex-col items-center justify-center transition-opacity duration-300 animate-fadeIn">
                     <div className="relative mb-8">
                         <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-50 duration-1000"></div>
                         <div className="absolute inset-0 bg-teal-400 rounded-full animate-pulse opacity-40 delay-75"></div>
@@ -217,6 +219,27 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
                     >
                         Pause
                     </button>
+                </div>
+            )}
+            
+            {/* Permission Error Overlay */}
+            {permissionError && (
+                <div className="absolute inset-0 z-[70] bg-teal-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+                    <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
+                        <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                            <MicIcon />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">Microphone Access Denied</h3>
+                        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                            Please allow microphone permissions in your browser settings to use voice commands.
+                        </p>
+                        <button 
+                            onClick={() => setPermissionError(false)}
+                            className="w-full py-3 bg-teal-900 text-white rounded-xl font-bold text-sm hover:bg-teal-800 transition-colors"
+                        >
+                            Okay, I understand
+                        </button>
+                    </div>
                 </div>
             )}
 

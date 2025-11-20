@@ -113,7 +113,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
                         <RecordsIcon />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">{file?.name}</h3>
-                    <p className="text-slate-400 text-sm">PDF Document Ready</p>
+                    <p className="text-slate-400 text-sm">PDF Document Ready for Analysis</p>
                 </div>
             ) : (
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
@@ -135,7 +135,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
                             className="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-3 group transform active:scale-95"
                         >
                            <div className="bg-white/20 p-1.5 rounded-full"><UploadIcon /></div>
-                           Upload File
+                           Upload File / PDF
                         </button>
                     </div>
                 ) : (
@@ -185,7 +185,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ onStartScan, error, onBackT
 
             <div className="flex items-center justify-center">
                 {file ? (
-                    <button onClick={handleScan} className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.5)] active:scale-95 transition-transform">
+                    <button onClick={handleScan} className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.5)] active:scale-95 transition-transform animate-pulse">
                          {isPdf ? <div className="text-white font-bold text-xs">ANALYZE</div> : <div className="text-white text-3xl"><CameraIcon /></div>}
                     </button>
                 ) : (
