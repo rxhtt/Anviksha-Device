@@ -14,9 +14,11 @@ import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } from './types.ts';
 
 // ------------------------------------------------------------------
-// PASTE YOUR GOOGLE GEMINI API KEY BELOW
+// SECURE API KEY CONFIGURATION
+// The key is loaded from the environment. 
+// Ensure 'API_KEY' is set in your Vercel Project Settings.
 // ------------------------------------------------------------------
-const API_KEY = "AIzaSyA6U7X1YlFlY52zYwSyXhBWJMhgsBNnHqA"; 
+const API_KEY = process.env.API_KEY as string;
 // ------------------------------------------------------------------
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
@@ -55,7 +57,7 @@ const App: React.FC = () => {
   const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Initialize AI Manager directly with the hardcoded key
+  // Initialize AI Manager directly with the secure key
   const aiManager = useMemo(() => new AIManager(API_KEY), []);
 
   useEffect(() => {
@@ -133,13 +135,12 @@ const App: React.FC = () => {
   const runTriage = async (inputs: TriageInputs) => {
     setIsLoading(true);
     try {
-        // Pass false for demo mode (always real now)
-        const result = await aiManager.performTriage(inputs, false);
+        const result = await aiManager.performTriage(inputs);
         setTriageResult(result);
         setCurrentScreen('triage-results');
     } catch (err) {
         console.error("Triage failed", err);
-        alert("Triage analysis failed. Please check your internet connection.");
+        alert("Triage analysis failed. Please check your internet connection and API Key configuration.");
     } finally {
         setIsLoading(false);
     }
@@ -149,8 +150,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Pass false for demo mode (always real now)
-      const rawResult = await aiManager.analyzeImage(file, selectedModality, false);
+      const rawResult = await aiManager.analyzeImage(file, selectedModality);
       const normalizedData = normalizeAiResult(rawResult, selectedModality);
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
