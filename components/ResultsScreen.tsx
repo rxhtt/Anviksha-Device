@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import type { AnalysisResult } from '../types.ts';
-import { SparklesIcon, ShareIcon } from './IconComponents.tsx';
+import { SparklesIcon, ShareIcon, HomeIcon, RecordsIcon } from './IconComponents.tsx';
 import ImageZoom from './ImageZoom.tsx';
 
 interface ResultsScreenProps {
@@ -71,9 +72,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
   return (
     <div className="flex flex-col h-full">
       
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-20 px-1">
           {imageUrl && (
-            <div className="relative h-48 rounded-[2rem] overflow-hidden bg-black mb-6 shadow-md group" onClick={() => setIsZoomModalOpen(true)}>
+            <div className="relative h-48 rounded-[2rem] overflow-hidden bg-black mb-6 shadow-md group mx-4 mt-4" onClick={() => setIsZoomModalOpen(true)}>
                 <img src={imageUrl} alt="Scan" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute bottom-3 right-4 bg-black/50 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-medium">
                     Tap to Zoom
@@ -84,14 +85,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
             </div>
           )}
 
-          <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 mb-4">
+          <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 mb-4 mx-2">
             <div className="flex justify-between items-start mb-3">
                 <div className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide border ${statusClass}`}>
                     {statusText}
                 </div>
                 <span className="text-slate-300 text-xs font-semibold">{new Date(result.date).toLocaleDateString()}</span>
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-1 leading-tight">{result.condition}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1 leading-tight">{result.condition}</h1>
             <p className="text-slate-500 font-medium text-sm leading-relaxed mt-2">{result.description}</p>
 
             <div className="mt-6">
@@ -105,18 +106,18 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
             </div>
           </div>
 
-          <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 mb-4">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Detailed Findings</h3>
+          <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 mb-4 mx-2">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3">Detailed Findings</h3>
             <p className="text-sm text-slate-600 leading-relaxed mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
                 {result.details || "No specific details provided."}
             </p>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-2">Treatment Plan</h3>
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">Treatment Plan</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
                 {result.treatment}
             </p>
           </div>
 
-           <div className={`rounded-[2rem] p-5 border flex items-center justify-between ${modalityColor.replace('text-', 'border-').replace('600', '100')}`}>
+           <div className={`rounded-[2rem] p-5 border flex items-center justify-between mx-2 ${modalityColor.replace('text-', 'border-').replace('600', '100')}`}>
                 <div className="flex items-center gap-3">
                     <div className={`p-2.5 bg-white rounded-full shadow-sm ${modalityColor}`}><SparklesIcon /></div>
                     <div>
@@ -131,24 +132,32 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
            </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-100 flex gap-3 z-10">
-         {isViewingRecord ? (
-             <button onClick={onReturnToRecords} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-3.5 rounded-2xl transition-colors shadow-sm">
-                 Back to Records
-             </button>
-         ) : (
-            <>
-                <button onClick={onNewAnalysis} className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 font-bold py-3.5 rounded-2xl transition-colors shadow-sm">
-                    Hub
-                </button>
-                <button 
-                    onClick={() => onSaveRecord(result)} 
-                    className="flex-[2] bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-slate-300 transition-all"
-                >
-                    Save Record
-                </button>
-            </>
-         )}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-10">
+         <div className="flex gap-3">
+             {isViewingRecord ? (
+                 <button 
+                    onClick={onReturnToRecords} 
+                    className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                 >
+                     <RecordsIcon /> Back to Records
+                 </button>
+             ) : (
+                <>
+                    <button 
+                        onClick={onNewAnalysis} 
+                        className="flex-1 h-12 bg-white border-2 border-slate-100 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                        <HomeIcon /> Home
+                    </button>
+                    <button 
+                        onClick={() => onSaveRecord(result)} 
+                        className="flex-[1.5] h-12 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg shadow-slate-300 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                    >
+                        Save Record
+                    </button>
+                </>
+             )}
+         </div>
       </div>
       
       {isZoomModalOpen && imageUrl && <ImageZoom src={imageUrl} onClose={() => setIsZoomModalOpen(false)} />}

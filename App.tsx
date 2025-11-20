@@ -133,7 +133,7 @@ const App: React.FC = () => {
       setCurrentScreen('triage');
     } else if (currentScreen === 'analysis') {
       setIsLoading(false);
-      setCurrentScreen('camera'); // Allow user to cancel analysis and retake photo
+      setCurrentScreen('camera');
     }
   };
 
@@ -145,7 +145,7 @@ const App: React.FC = () => {
         setCurrentScreen('triage-results');
     } catch (err) {
         console.error("Triage failed", err);
-        alert("Triage analysis failed. Please check your internet connection and API Key configuration.");
+        alert("Triage analysis failed. Please check your internet connection.");
     } finally {
         setIsLoading(false);
     }
@@ -173,7 +173,12 @@ const App: React.FC = () => {
     if (currentScreen === 'analysis' && imageFile) runAnalysis(imageFile);
   }, [currentScreen, imageFile]);
 
+  // Screens that take up the full view without standard header/padding logic
   const isFullScreenApp = ['chat', 'therapy', 'pharmacy'].includes(currentScreen);
+
+  // Screens that have their own internal scrolling and should occupy exactly 100% height of the container
+  // This prevents the main window from scrolling, fixing layout issues with sticky headers and absolute modals
+  const hasInternalScroll = ['hub', 'triage', 'triage-results', 'chat', 'pharmacy', 'therapy', 'camera', 'analysis'].includes(currentScreen);
 
   const renderScreen = () => {
     if (viewingRecordId && currentScreen === 'results') {
@@ -235,8 +240,8 @@ const App: React.FC = () => {
           <Header isOnline={isOnline} currentScreen={currentScreen} onBack={handleBack} />
         }
         
-        <main className={`main-content flex-1 bg-white ${isFullScreenApp ? 'overflow-hidden flex flex-col' : 'overflow-y-auto scroll-smooth'}`}>
-          <div key={currentScreen} className={`screen-container ${isFullScreenApp ? 'h-full' : 'min-h-full'} flex flex-col`}>
+        <main className={`main-content flex-1 bg-white ${hasInternalScroll ? 'overflow-hidden flex flex-col' : 'overflow-y-auto scroll-smooth'}`}>
+          <div key={currentScreen} className={`screen-container ${hasInternalScroll ? 'h-full' : 'min-h-full'} flex flex-col`}>
             {renderScreen()}
           </div>
         </main>

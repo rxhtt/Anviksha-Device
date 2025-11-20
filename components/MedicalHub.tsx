@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
     LungsIcon, EKGIcon, DropIcon, BrainIcon, BoneIcon, MicroscopeIcon, 
@@ -21,7 +22,7 @@ interface ServiceCardProps {
 const ServiceCard: React.FC<ServiceCardProps> = ({ icon, label, color, onClick }) => (
     <button 
         onClick={onClick}
-        className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-300"
+        className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-300 h-full"
     >
         <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-2xl mb-3 shadow-inner`}>
             {icon}
@@ -44,19 +45,11 @@ interface InstructionModalProps {
 const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, onConfirm, title, instruction, explanation, icon, color }) => {
     if (!isOpen) return null;
     
-    // Extract color classes for styling
-    const bgClass = color.split(' ').find(c => c.startsWith('bg-')) || 'bg-slate-100';
-    const textClass = color.split(' ').find(c => c.startsWith('text-')) || 'text-slate-900';
-
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6">
-            {/* Backdrop */}
+        <div className="absolute inset-0 z-[100] flex items-center justify-center px-4 py-6 h-full w-full">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md transition-opacity animate-fadeIn" onClick={onClose}></div>
 
-            {/* Card Container - Redesigned Premium Layout */}
             <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp border-4 border-white/20">
-                
-                {/* Header */}
                 <div className="p-8 pb-6 bg-white shrink-0 text-center relative">
                     <div className={`w-24 h-24 mx-auto rounded-[2rem] flex items-center justify-center text-5xl shadow-2xl shadow-slate-200 mb-5 ${color} ring-8 ring-slate-50`}>
                         {icon}
@@ -72,9 +65,7 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
                     </button>
                 </div>
 
-                {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-8 pb-4 space-y-6">
-                    
                     <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
                         <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Standard Protocol</h4>
                         <p className="text-sm font-medium text-slate-800 leading-relaxed">
@@ -101,7 +92,6 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="p-6 bg-white border-t border-slate-50 shrink-0">
                     <button 
                         onClick={onConfirm} 
@@ -112,16 +102,12 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
                     </button>
                 </div>
             </div>
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes scaleUp { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-            `}</style>
         </div>
     );
 }
 
 const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm p-6">
+    <div className="absolute inset-0 z-[90] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm p-6 h-full w-full">
         <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden animate-scaleUp shadow-2xl border border-white/10">
             <div className="bg-blue-600 p-8 text-center relative overflow-hidden">
                 <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-blue-500 rounded-full blur-3xl opacity-50"></div>
@@ -135,11 +121,11 @@ const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
             <div className="p-8">
                 <div className="mb-6">
                     <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                        This is purely for <strong>analyzing medical images</strong> you already have.
+                        This is purely for <strong>analyzing medical images</strong>.
                     </p>
                     <div className="my-4 h-px bg-slate-100"></div>
                     <p className="text-slate-600 text-sm leading-relaxed">
-                        You use this when a patient brings an <strong>X-Ray, MRI, or Blood Report</strong>, and you need an expert AI opinion on <em>that specific image</em>.
+                        Use this when a patient provides an <strong>X-Ray, MRI, or Report</strong> for expert AI opinion.
                     </p>
                 </div>
 
@@ -148,7 +134,7 @@ const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
                         <MicroscopeIcon />
                     </div>
                     <p className="text-xs font-bold text-slate-700">
-                        Acts like a Radiologist or Pathologist.
+                        Radiologist-Grade Analysis
                     </p>
                 </div>
 
@@ -180,73 +166,73 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
         switch(modality) {
             case 'XRAY':
                 return {
-                    title: "Chest X-Ray Analysis",
-                    instruction: "Upload a clear photo of the physical X-ray film against a lightbox, or capture a digital screen displaying the X-ray. Avoid glare. Ensure R/L markers are visible.",
-                    explanation: "Uses Vision Transformers to detect pneumonia, TB, nodules, and fractures with radiologist-level precision.",
+                    title: "Chest X-Ray",
+                    instruction: "Upload a clear photo of the physical X-ray film or a digital screen capture. Ensure markers (L/R) are visible.",
+                    explanation: "Detects pneumonia, TB, nodules, fractures, and effusions.",
                     icon: <LungsIcon />,
                     color: "bg-blue-50 text-blue-600"
                 };
             case 'MRI':
                 return {
-                    title: "MRI Neural Scan",
-                    instruction: "Capture the specific MRI sequence (T1, T2, FLAIR) clearly. If uploading a file, ensure it is high resolution. Text labels should not obscure the anatomy.",
-                    explanation: "Segments brain and spine structures to identify tumors, ischemia, or disc herniation.",
+                    title: "MRI Scan",
+                    instruction: "Capture specific MRI sequences (T1/T2). High contrast images work best.",
+                    explanation: "Analyzes soft tissue, brain structures, and spinal alignment.",
                     icon: <BrainIcon />,
                     color: "bg-purple-50 text-purple-600"
                 };
             case 'CT':
                 return {
-                    title: "CT Scan Analysis",
-                    instruction: "Ensure the CT slice is well-lit. If scanning from a screen, reduce brightness to prevent blooming. Supports Dicom-to-Image or PDF reports.",
-                    explanation: "Analyzes cross-sectional density to detect hemorrhage, masses, or organ damage.",
+                    title: "CT Scan",
+                    instruction: "Ensure slice is well-lit. Reduce screen brightness to prevent blooming if photographing a monitor.",
+                    explanation: "Identifies hemorrhage, masses, and internal trauma.",
                     icon: <BrainIcon />,
                     color: "bg-indigo-50 text-indigo-600"
                 };
             case 'ECG':
                 return {
-                    title: "ECG / EKG Analysis",
-                    instruction: "Align camera parallel to the grid. Ensure P, QRS, and T waves are sharp. Flatten the paper if curved. PDF export from ECG machine is preferred.",
-                    explanation: "Digitizes waveform intervals (PR, QT) to detect AFib, STEMI, and other arrhythmias.",
+                    title: "ECG / EKG",
+                    instruction: "Align camera parallel to grid. Ensure P, QRS, and T waves are sharp.",
+                    explanation: "Measures intervals to detect AFib, STEMI, and arrhythmias.",
                     icon: <EKGIcon />,
                     color: "bg-rose-50 text-rose-600"
                 };
             case 'BLOOD':
                 return {
-                    title: "Lab Report OCR",
-                    instruction: "Take a steady photo of the printed report or upload the PDF file directly. Ensure numerical values and reference ranges are legible.",
-                    explanation: "Extracts biomarkers via OCR and cross-references with medical standards to flag critical abnormalities.",
+                    title: "Lab Report",
+                    instruction: "Photo of printed report or PDF upload. Ensure numbers are legible.",
+                    explanation: "OCRs values to flag abnormal biomarkers.",
                     icon: <DropIcon />,
                     color: "bg-red-50 text-red-600"
                 };
             case 'DERMA':
                 return {
-                    title: "Dermatology Scan",
-                    instruction: "Take a well-lit, macro photo of the skin lesion. Place a small coin nearby for size reference if possible. Avoid shadows.",
-                    explanation: "Analyzes asymmetry, border, color, and diameter (ABCD) to assess malignancy risk.",
+                    title: "Skin Scan",
+                    instruction: "Macro photo of lesion. Good lighting is essential.",
+                    explanation: "Assesses ABCDs of melanoma and common rashes.",
                     icon: <MicroscopeIcon />,
                     color: "bg-amber-50 text-amber-600"
                 };
             case 'DENTAL':
                 return {
                     title: "Dental X-Ray",
-                    instruction: "Capture OPG or Bitewing X-rays. Ensure contrast is sufficient to see roots and gum line. PDF reports supported.",
-                    explanation: "Detects caries, bone loss, and impacted teeth.",
+                    instruction: "OPG or Bitewing X-ray needed.",
+                    explanation: "Checks for cavities, bone loss, and impaction.",
                     icon: <ToothIcon />,
                     color: "bg-teal-50 text-teal-600"
                 };
             case 'OPHTHAL':
                 return {
-                    title: "Retinal / Eye Scan",
-                    instruction: "Upload Fundus camera images or close-up of the external eye. Ensure flash does not wash out the retina.",
-                    explanation: "Screens for diabetic retinopathy, glaucoma, and cataracts.",
+                    title: "Eye Scan",
+                    instruction: "Fundus image or external eye photo.",
+                    explanation: "Screens for retinopathy and cataracts.",
                     icon: <EyeIcon />,
                     color: "bg-blue-50 text-blue-600"
                 };
             default:
                 return {
                     title: "Medical Analysis",
-                    instruction: "Ensure the medical document or anatomical area is clearly visible, well-lit, and in focus. PDF and Images supported.",
-                    explanation: "FDA-aligned algorithms provide preliminary diagnostic insights.",
+                    instruction: "Ensure document or area is visible.",
+                    explanation: "Standard AI diagnostic protocol.",
                     icon: <MicroscopeIcon />,
                     color: "bg-slate-50 text-slate-600"
                 };
@@ -284,35 +270,36 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
                 color={modalState.color}
             />
 
-            <div className="px-4 mb-4 pt-2">
+            <div className="px-4 mb-4 pt-2 shrink-0">
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Medical Services</h2>
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Select Department</h1>
             </div>
 
-            <div className="flex px-4 gap-2 overflow-x-auto no-scrollbar mb-6 pb-2">
-                {[
-                    { id: 'scans', label: 'Scans & Imaging' },
-                    { id: 'specialist', label: 'Specialist Care' },
-                    { id: 'labs', label: 'Lab Reports' },
-                    { id: 'wellness', label: 'Wellness' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-                            activeTab === tab.id 
-                                ? 'bg-slate-900 text-white shadow-md transform scale-105' 
-                                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            <div className="px-4 mb-6 pb-1 shrink-0">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                    {[
+                        { id: 'scans', label: 'Scans & Imaging' },
+                        { id: 'specialist', label: 'Specialist Care' },
+                        { id: 'labs', label: 'Lab Reports' },
+                        { id: 'wellness', label: 'Wellness' }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                                activeTab === tab.id 
+                                    ? 'bg-slate-900 text-white shadow-md transform scale-105' 
+                                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-10">
                     {activeTab === 'scans' && (
                         <>
                             <ServiceCard icon={<LungsIcon />} label="Chest X-Ray" color="bg-blue-50 text-blue-600" onClick={() => handleServiceClick('XRAY')} />
@@ -328,7 +315,7 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
                         <>
                             <ServiceCard icon={<EKGIcon />} label="Cardiology" color="bg-rose-50 text-rose-600" onClick={() => handleServiceClick('ECG')} />
                             <ServiceCard icon={<MicroscopeIcon />} label="Dermatology" color="bg-amber-50 text-amber-600" onClick={() => handleServiceClick('DERMA')} />
-                            <ServiceCard icon={<ToothIcon />} label="Dental / Oral" color="bg-teal-50 text-teal-600" onClick={() => handleServiceClick('DENTAL')} />
+                            <ServiceCard icon={<ToothIcon />} label="Dental" color="bg-teal-50 text-teal-600" onClick={() => handleServiceClick('DENTAL')} />
                             <ServiceCard icon={<EyeIcon />} label="Ophthalmology" color="bg-blue-50 text-blue-600" onClick={() => handleServiceClick('OPHTHAL')} />
                             <ServiceCard icon={<BabyIcon />} label="Pediatrics" color="bg-sky-50 text-sky-600" onClick={() => handleServiceClick('PEDIATRIC')} />
                             <ServiceCard icon={<LungsIcon />} label="ENT / Throat" color="bg-orange-50 text-orange-600" onClick={() => handleServiceClick('ENT')} />
