@@ -117,7 +117,7 @@ const App: React.FC = () => {
     setError(null);
     setImageFile(null);
     setViewingRecordId(null);
-    setCurrentScreen('welcome');
+    setCurrentScreen('hub');
   };
 
   const handleSaveRecord = (result: AnalysisResult) => {

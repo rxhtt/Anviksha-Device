@@ -147,7 +147,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
                         onClick={onNewAnalysis} 
                         className="flex-1 h-12 bg-white border-2 border-slate-100 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
                     >
-                        <HomeIcon /> Home
+                        <span className="text-lg text-slate-500"><HomeIcon /></span>
+                        <span>Home</span>
                     </button>
                     <button 
                         onClick={() => onSaveRecord(result)} 
