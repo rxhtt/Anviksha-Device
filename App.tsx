@@ -12,7 +12,7 @@ import ChatScreen from './components/ChatScreen.tsx';
 import PharmacyScreen from './components/PharmacyScreen.tsx';
 import TherapyScreen from './components/TherapyScreen.tsx';
 import SplashScreen from './components/SplashScreen.tsx';
-import BottomNav from './components/BottomNav.tsx';
+import Header from './components/Header.tsx';
 import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } from './types.ts';
 
@@ -131,13 +131,6 @@ const App: React.FC = () => {
     setImageFile(null);
     setCurrentScreen('results');
   };
-  
-  const handleNavChange = (tab: string) => {
-    if (tab === 'home') setCurrentScreen('welcome');
-    if (tab === 'scan') setCurrentScreen('hub');
-    if (tab === 'records') setCurrentScreen('records');
-    if (tab === 'care') setCurrentScreen('pharmacy');
-  };
 
   const handleBack = () => {
     setError(null);
@@ -240,29 +233,26 @@ const App: React.FC = () => {
     }
   };
 
-  const hideBottomNav = ['camera', 'analysis', 'triage', 'triage-results', 'results'].includes(currentScreen);
+  // Hide header on specific screens where full immersion is better
+  const shouldShowHeader = !['camera', 'analysis'].includes(currentScreen);
 
   return (
-    <div className="bg-slate-900 h-dvh w-screen flex items-center justify-center overflow-hidden">
+    <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden text-slate-900 font-sans">
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
-      <div className="relative h-full w-full sm:max-w-[430px] sm:h-[95vh] bg-slate-50 sm:rounded-[3rem] overflow-hidden flex flex-col border-[8px] border-slate-900 shadow-2xl">
-        
-        <main className="flex-1 relative overflow-hidden bg-slate-50">
-          <div className="absolute inset-0 overflow-y-auto no-scrollbar scroll-smooth">
+      {shouldShowHeader && (
+          <Header 
+            isOnline={true} 
+            currentScreen={currentScreen}
+            onBack={handleBack}
+          />
+      )}
+
+      <main className="flex-1 relative overflow-hidden">
+          <div className="absolute inset-0 overflow-y-auto scroll-smooth">
             {renderScreen()}
-            {!hideBottomNav && <div className="h-24"></div>}
           </div>
-        </main>
-
-        {!hideBottomNav && (
-          <BottomNav currentScreen={currentScreen} onNavigate={handleNavChange} />
-        )}
-
-        <div className="absolute bottom-1 left-0 right-0 flex justify-center pointer-events-none z-[60]">
-          <div className="w-32 h-1.5 bg-slate-900/20 rounded-full mb-2"></div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
