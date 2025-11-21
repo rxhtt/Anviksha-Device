@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
     CheckCircleIcon, LungsIcon, HeartIcon, BrainIcon, MicroscopeIcon, ArrowLeftIcon, TriageIcon, DnaIcon
@@ -30,7 +31,7 @@ const DetailsScreen: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <section>
               <h2 className="text-xl font-bold text-slate-900 mb-2">About the App</h2>
               <p className="text-slate-600 text-sm leading-relaxed font-medium">
-                  Anviksha AI is a comprehensive <strong>Digital Hospital</strong> offering over 25+ medical specialities. Powered by FDA-approved class algorithms and High-Precision Generative models, it brings expert-level diagnostics to your pocket.
+                  Anviksha AI is a comprehensive <strong>Digital Hospital</strong> offering over 25+ medical specialities. Powered by medically-aligned algorithms and High-Precision Generative models, it brings expert-level diagnostics to your pocket.
               </p>
               <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
                   <p className="text-xs text-blue-800 font-bold">Innovation and Concept by <br/><span className="text-base text-blue-900">Rohit Bagewadi</span></p>

@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon } from './IconComponents.tsx';
 
@@ -145,7 +146,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpenHub, onStartScan, o
               >
                   <div className="text-blue-600"><CheckCircleIcon /></div>
                   <div className="text-left">
-                    <span className="block text-xs font-bold text-slate-900 uppercase tracking-wide">Powered by FDA Approved Models</span>
+                    <span className="block text-xs font-bold text-slate-900 uppercase tracking-wide">Powered by Advanced Diagnostic AI</span>
                     <span className="block text-[10px] text-slate-500">Tap for details & credits</span>
                   </div>
               </button>

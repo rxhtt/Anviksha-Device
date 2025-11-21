@@ -1,3 +1,4 @@
+
 // FAIL-SAFE AI MANAGER
 // 1. Attempts to contact secure backend (/api/process).
 // 2. If backend fails (network/config), automatically falls back to "Mock Engine".
@@ -71,7 +72,7 @@ export default class AIManager {
             }
             
             // 2. Fallback to Mock if Server fails (or no API key configured on server)
-            console.warn("Server unreachable or API key missing. Using FDA-Simulated Mock Data.");
+            console.warn("Server unreachable or API key missing. Using Clinical Simulation Data.");
             await new Promise(r => setTimeout(r, 2500)); // Simulate processing delay
 
             if (modality === 'DERMA') return getRandomResult(MOCK_DERMA_RESULTS);

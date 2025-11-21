@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import MedicalHub from './components/MedicalHub.tsx';
@@ -25,8 +26,8 @@ const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 
     details: data.details,
     treatment: data.treatment || "Consult specialist.",
     isEmergency: data.isEmergency ?? data.emergency ?? false,
-    modelVersion: "Gemini 2.5 / FDA-Sim",
-    modelUsed: "Hybrid-Core",
+    modelVersion: "Anviksha-Neural-v2.5",
+    modelUsed: "Clinical-Core",
     cost: data.cost,
   };
 };
