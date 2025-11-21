@@ -54,16 +54,41 @@ const App: React.FC = () => {
   
   const aiManager = useMemo(() => new AIManager(), []);
 
-  // SECURITY CRITICAL: Wipe any potential API keys from local storage immediately
-  // This ensures no keys are ever persisted on the client device.
+  // SECURITY CRITICAL: Aggressively wipe all API keys from local storage
   useEffect(() => {
     try {
-        localStorage.removeItem('gemini_api_key');
-        localStorage.removeItem('GOOGLE_API_KEY');
-        localStorage.removeItem('REACT_APP_GEMINI_KEY');
-        console.log('Security Check: Local Storage Credentials Wiped.');
+        const sensitiveKeys = [
+            'geminiApiKey', 
+            'gemini_api_key', 
+            'GOOGLE_API_KEY', 
+            'REACT_APP_GEMINI_KEY', 
+            'google_api_key'
+        ];
+        
+        // Targeted removal
+        sensitiveKeys.forEach(key => {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        // Pattern scanning removal
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.toLowerCase().includes('apikey') || key.toLowerCase().includes('auth_token'))) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        
+        // Clear URL parameters if any keys leaked there
+        if (window.location.search.includes('key=')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
     } catch(e) {
-        // Ignore errors if restricted
+        // Silent fail
     }
   }, []);
 
@@ -131,7 +156,6 @@ const App: React.FC = () => {
         setCurrentScreen('triage-results');
     } catch (err) {
         console.error("Triage failed", err);
-        // Fallback is handled in aiManager, but just in case
         setTriageResult({
              riskScore: 45,
              recommendation: 'CONSIDER_XRAY',
@@ -216,31 +240,25 @@ const App: React.FC = () => {
     }
   };
 
-  // Screens where we hide the bottom navigation for full immersion
   const hideBottomNav = ['camera', 'analysis', 'triage', 'triage-results', 'results'].includes(currentScreen);
 
   return (
     <div className="bg-slate-900 h-dvh w-screen flex items-center justify-center overflow-hidden">
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
-      {/* Mobile Container */}
       <div className="relative h-full w-full sm:max-w-[430px] sm:h-[95vh] bg-slate-50 sm:rounded-[3rem] overflow-hidden flex flex-col border-[8px] border-slate-900 shadow-2xl">
         
-        {/* Content Area - Fixed Height with Internal Scroll */}
         <main className="flex-1 relative overflow-hidden bg-slate-50">
           <div className="absolute inset-0 overflow-y-auto no-scrollbar scroll-smooth">
             {renderScreen()}
-            {/* Spacer for Bottom Nav */}
             {!hideBottomNav && <div className="h-24"></div>}
           </div>
         </main>
 
-        {/* Persistent Bottom Navigation */}
         {!hideBottomNav && (
           <BottomNav currentScreen={currentScreen} onNavigate={handleNavChange} />
         )}
 
-        {/* iOS Home Indicator Mock */}
         <div className="absolute bottom-1 left-0 right-0 flex justify-center pointer-events-none z-[60]">
           <div className="w-32 h-1.5 bg-slate-900/20 rounded-full mb-2"></div>
         </div>
