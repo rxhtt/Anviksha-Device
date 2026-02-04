@@ -31,8 +31,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager, profile, lan
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const Recognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognitionRef = useRef<any>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
     useEffect(() => {
         if (!currentSessionId) {
@@ -105,26 +104,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager, profile, lan
         };
     };
 
-    useEffect(() => {
-        if (Recognition) {
-            const recognition = new Recognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = () => setIsListening(true);
-            recognition.onend = () => setIsListening(false);
-            recognition.onerror = (event: any) => {
-                setIsListening(false);
-                if (event.error === 'not-allowed' || event.error === 'permission-denied') setPermissionError(true);
-            };
-            recognition.onresult = (event: any) => {
-                const transcript = event.results[0][0].transcript;
-                if (transcript) setInputText(prev => prev + (prev ? ' ' : '') + transcript);
-            };
-            recognitionRef.current = recognition;
-        }
-    }, [Recognition]);
+    // Voice recognition logic handled by toggleVoiceInput
 
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     useEffect(() => { scrollToBottom(); }, [messages]);
@@ -137,11 +117,46 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager, profile, lan
         }
     };
 
-    const toggleVoiceInput = () => {
-        setPermissionError(false);
-        if (!recognitionRef.current) return;
-        if (isListening) recognitionRef.current.stop();
-        else recognitionRef.current.start();
+    const toggleVoiceInput = async () => {
+        if (isListening) {
+            setIsListening(false);
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+                mediaRecorderRef.current.stop();
+            }
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                const audioChunks: Blob[] = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    setIsLoading(true);
+                    try {
+                        const transcript = await aiManager.transcribeAudio(audioBlob, language);
+                        if (transcript) {
+                            setInputText(prev => prev + (prev ? ' ' : '') + transcript);
+                        }
+                    } catch (error) {
+                        console.error("Transcription failed", error);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorderRef.current = mediaRecorder;
+                mediaRecorder.start();
+                setIsListening(true);
+            } catch (err) {
+                console.error("Error accessing microphone", err);
+                setPermissionError(true);
+            }
+        }
     };
 
     const handleSend = async () => {

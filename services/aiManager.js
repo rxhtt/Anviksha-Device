@@ -102,8 +102,28 @@ export default class AIManager {
         `;
     }
 
+    async analyzeImageVision(file) {
+        try {
+            const base64 = await fileToBase64(file);
+            const data = await this.#safeFetch('/api/analyze-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64 })
+            });
+
+            console.log("Vision Results:", data);
+            return data;
+        } catch (error) {
+            console.error("Vision Analysis Error:", error);
+            throw error;
+        }
+    }
+
     async analyzeImage(file, modality, profile, language = 'en') {
         try {
+            // First, get basic image info from Vision API to enhance the prompt or validate
+            const visionData = await this.analyzeImageVision(file).catch(() => null);
+
             const base64 = await fileToBase64(file);
             const specialist = SPECIALIST_PERSONAS[modality] || SPECIALIST_PERSONAS.DEFAULT;
             const profileContext = this.getProfileContext(profile);
@@ -111,6 +131,11 @@ export default class AIManager {
             const systemInstruction = `You are a ${specialist.role}. ${specialist.context}
             
             ${profileContext}
+            
+            VISION API CONTEXT:
+            - Labels: ${JSON.stringify(visionData?.responses?.[0]?.labelAnnotations?.map(l => l.description) || [])}
+            - Text Detected: ${JSON.stringify(visionData?.responses?.[0]?.fullTextAnnotation?.text || "None")}
+            - Web Entities: ${JSON.stringify(visionData?.responses?.[0]?.webDetection?.webEntities?.map(e => e.description) || [])}
             
             LANGUAGE: Respond primarily in ${language === 'hi' ? 'Hindi (Transliterated/Romanized if technical)' : 'English'}.
             
@@ -258,12 +283,13 @@ export default class AIManager {
                 ]
             }`;
 
-            const data = await this.#safeFetch('/api/process', {
+            const data = await this.#safeFetch('/api/consult', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: userPrompt,
-                    config: { responseMimeType: "application/json" }
+                    persona: "You are a Clinical Pharmacist and Generic Medicine Expert. Focus on providing cost-effective generic alternatives available in India.",
+                    model: 'gemini-1.5-flash'
                 })
             });
 
@@ -285,12 +311,13 @@ export default class AIManager {
             You are a compassionate Clinical Psychologist. Provide a 2-3 sentence supportive response. 
             No JSON, just plain text.`;
 
-            const data = await this.#safeFetch('/api/process', {
+            const data = await this.#safeFetch('/api/consult', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: userPrompt,
-                    config: { temperature: 0.7 }
+                    persona: "You are a compassionate Clinical Psychologist. Your goal is to provide emotional support and active listening.",
+                    model: 'gemini-1.5-flash'
                 })
             });
 
@@ -298,6 +325,30 @@ export default class AIManager {
             return "I'm here to listen. Can you tell me more about what's on your mind?";
         } catch (e) {
             return "I'm here to support you. How are you feeling today?";
+        }
+    }
+
+    async transcribeAudio(audioBlob, language = 'en') {
+        try {
+            const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(audioBlob);
+            });
+
+            const data = await this.#safeFetch('/api/speech-to-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    audioBase64: base64,
+                    languageCode: language === 'hi' ? 'hi-IN' : 'en-US'
+                })
+            });
+
+            return data.text;
+        } catch (error) {
+            console.error("Transcription failed:", error);
+            throw error;
         }
     }
 
