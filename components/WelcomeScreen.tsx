@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon, AnvikshaLogo, UserIcon, UploadIcon } from './IconComponents.tsx';
+import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon, AnvikshaLogo, UserIcon, UploadIcon, SettingsIcon } from './IconComponents.tsx';
 
 interface FeatureCardProps {
   image?: string;
@@ -62,11 +62,12 @@ interface WelcomeScreenProps {
   onOpenPharmacy: () => void;
   onOpenTherapy?: () => void;
   onOpenProfile: () => void;
+  onOpenSettings: () => void;
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onOpenHub, onStartScan, onStartTriage, onShowRecords, onShowDetails,
-  onOpenChat, onOpenPharmacy, onOpenTherapy, onOpenProfile
+  onOpenChat, onOpenPharmacy, onOpenTherapy, onOpenProfile, onOpenSettings
 }) => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [profile] = useState<any>(() => {
@@ -104,12 +105,20 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Neural Medical Core</p>
             </div>
           </div>
-          <button
-            onClick={onOpenProfile}
-            className="w-14 h-14 rounded-[1.4rem] bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm hover:bg-slate-50 transition-all active:scale-90"
-          >
-            <UserIcon />
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onOpenSettings}
+              className="w-14 h-14 rounded-[1.4rem] bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm hover:bg-slate-50 transition-all active:scale-90"
+            >
+              <SettingsIcon />
+            </button>
+            <button
+              onClick={onOpenProfile}
+              className="w-14 h-14 rounded-[1.4rem] bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm hover:bg-slate-50 transition-all active:scale-90"
+            >
+              <UserIcon />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between bg-slate-50 rounded-[2rem] p-6 border border-slate-100/50 relative z-10 shadow-sm">

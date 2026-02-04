@@ -68,11 +68,20 @@ const getRandomResult = (list) => list[Math.floor(Math.random() * list.length)];
 export default class AIManager {
     constructor() {
         this.history = [];
+        this.config = JSON.parse(localStorage.getItem('anviksha_manual_keys') || '{}');
     }
 
     async #safeFetch(url, options) {
         try {
-            const response = await fetch(url, options);
+            // Inject manual keys if they exist in headers
+            const headers = {
+                ...options.headers,
+                'X-Manual-Gemini-Key': this.config.geminiKey || '',
+                'X-Manual-Vision-Key': this.config.visionKey || '',
+                'X-Manual-Speech-Key': this.config.speechKey || ''
+            };
+
+            const response = await fetch(url, { ...options, headers });
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 const errorMessage = errorData.error || `HTTP ${response.status}`;

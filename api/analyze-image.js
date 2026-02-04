@@ -3,8 +3,14 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Only POST allowed' });
     }
-    const { imageBase64 } = req.body; // Expecting base64 string from frontend
-    const apiKey = process.env.GOOGLE_VISION_API_KEY;
+
+    const { imageBase64 } = req.body;
+    const apiKey = req.headers['x-manual-vision-key'];
+
+    if (!apiKey || apiKey.trim() === "") {
+        return res.status(401).json({ error: "Vision API Key Missing. Please set it in Settings." });
+    }
+
     const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
     const payload = {
         requests: [
@@ -18,6 +24,7 @@ export default async function handler(req, res) {
             }
         ]
     };
+
     try {
         const response = await fetch(url, {
             method: 'POST',

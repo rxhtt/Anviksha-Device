@@ -15,6 +15,7 @@ import ProfileScreen from './components/ProfileScreen.tsx';
 import SplashScreen from './components/SplashScreen.tsx';
 import LegalConsentModal from './components/LegalConsentModal.tsx';
 import Header from './components/Header.tsx';
+import SettingsScreen from './components/SettingsScreen.tsx';
 import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality, UserProfile, Language } from './types.ts';
 
@@ -158,8 +159,8 @@ const App: React.FC = () => {
 
   const handleBack = () => {
     setError(null);
-    if (['results', 'analysis', 'camera', 'profile', 'records', 'details', 'chat', 'pharmacy', 'therapy'].includes(currentScreen)) {
-      setCurrentScreen(currentScreen === 'profile' || currentScreen === 'records' || currentScreen === 'details' ? 'welcome' : 'hub');
+    if (['results', 'analysis', 'camera', 'profile', 'records', 'details', 'chat', 'pharmacy', 'therapy', 'settings'].includes(currentScreen)) {
+      setCurrentScreen(currentScreen === 'profile' || currentScreen === 'records' || currentScreen === 'details' || currentScreen === 'settings' ? 'welcome' : 'hub');
     } else if (currentScreen === 'hub' || currentScreen === 'triage') {
       setCurrentScreen('welcome');
     } else {
@@ -256,7 +257,10 @@ const App: React.FC = () => {
           onOpenPharmacy={() => setCurrentScreen('pharmacy')}
           onOpenTherapy={() => setCurrentScreen('therapy')}
           onOpenProfile={() => setCurrentScreen('profile')}
+          onOpenSettings={() => setCurrentScreen('settings')}
         />;
+      case 'settings':
+        return <SettingsScreen onBack={handleBack} />;
     }
   };
 

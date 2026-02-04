@@ -1,15 +1,19 @@
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Only POST allowed' });
-    const { audioBase64, languageCode } = req.body;
 
-    // VERIFIED ACTIVE SPEECH KEY (from the HNG Project leak)
-    const apiKey = "AIzaSyDAUWqKOBYP-Y1LeuD3lFRAy9jiZwRpQP8";
+    const { audioBase64, languageCode } = req.body;
+    const apiKey = req.headers['x-manual-speech-key'];
+
+    if (!apiKey || apiKey.trim() === "") {
+        return res.status(401).json({ error: "Speech API Key Missing. Please set it in Settings." });
+    }
+
     const url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
 
     const payload = {
         config: {
             encoding: "WEBM_OPUS",
-            sampleRateHertz: 48000, // Critical for WEBM_OPUS transcribing
+            sampleRateHertz: 48000,
             languageCode: languageCode || "en-US",
             enableAutomaticPunctuation: true,
         },
@@ -28,7 +32,7 @@ export default async function handler(req, res) {
         if (data.error) {
             console.error("Speech API Error:", data.error);
             return res.status(403).json({
-                error: "Access Denied: Speech API not enabled on your current key.",
+                error: "Speech API Error",
                 details: data.error.message
             });
         }
