@@ -15,9 +15,9 @@ export default async function handler(req, res) {
     const { prompt, imageBase64, mimeType, config } = req.body;
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Use gemini-2.0-flash (Cutting-edge clinical reasoning)
+    // Use gemini-3-flash (State-of-the-Art Core)
     const modelInstance = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash"
+      model: "gemini-3-flash"
     });
 
     const systemInstruction = config?.systemInstruction || "";

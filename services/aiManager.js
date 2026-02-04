@@ -125,8 +125,8 @@ export default class AIManager {
                 const genAI = new GoogleGenerativeAI(apiKey);
 
                 // MULTI-MODEL RESILIENCE LOOP
-                // We try different models if the primary one throws a 404
-                const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+                // Prioritizing Gemini 3.0, with clinical fallbacks to 2.0 and 1.5
+                const modelsToTry = ["gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
                 let lastError = null;
 
                 for (const modelName of modelsToTry) {
