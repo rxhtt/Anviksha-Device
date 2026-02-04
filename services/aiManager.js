@@ -125,8 +125,9 @@ export default class AIManager {
                 const genAI = new GoogleGenerativeAI(apiKey);
 
                 // MULTI-MODEL RESILIENCE LOOP
-                // Prioritizing Gemini 3.0, with clinical fallbacks to 2.0 and 1.5
-                const modelsToTry = ["gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+                // Prioritizing stability (1.5) for the competition, with 3.0/2.0 as options
+                // This loop now handles 429 (Quota) and 404 (Not Found) errors
+                const modelsToTry = ["gemini-1.5-flash", "gemini-3-flash", "gemini-2.0-flash"];
                 let lastError = null;
 
                 for (const modelName of modelsToTry) {
@@ -139,16 +140,19 @@ export default class AIManager {
                         ]);
                         text = result.response.text();
                         if (text) {
-                            console.log(`Successfully connected to clinical model: ${modelName}`);
+                            console.log(`Neural Link Established: ${modelName}`);
                             break;
                         }
                     } catch (err) {
                         lastError = err;
-                        if (err.message.includes("404") || err.message.includes("not found")) {
-                            console.warn(`Model ${modelName} not found, trying next...`);
+                        const isQuota = err.message.includes("429") || err.message.includes("quota");
+                        const isNotFound = err.message.includes("404") || err.message.includes("not found");
+
+                        if (isQuota || isNotFound) {
+                            console.warn(`Model ${modelName} ${isQuota ? 'Quota Exceeded' : 'Not Found'}, switching...`);
                             continue;
                         }
-                        throw err; // If it's not a 404, it might be an auth error or quota error
+                        throw err;
                     }
                 }
 
