@@ -1,85 +1,69 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const KEY_POOL = [
+  "AIzaSyDzXOdxOJ_FLQGVMXHzfRiXrnBJeog0MLo", // NUCLEAR_KEY_1
+  "AIzaSyA6U7X1YlFlY52zYwSyXhBWJMhgsBNnHqA", // PRO_1
+  "AIzaSyBptLrGSF2MT-IYLXpFD9QqrLUVCZPFic0", // PRO_2
+  "AIzaSyBIgh-9o1Fg1VXz2BrOEk3UFOU0Vpzt4Ug", // PRO_3
+  "AIzaSyCc7YkS2waYRV1aUk3yVjNQdtKMVPu0PUY", // FLASH
+  "AIzaSyAkja0H8ux3g2iw8jd-HJGEZxMMs04jIYk"  // KEY_1
+];
+
 export default async function handler(req, res) {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: "API_KEY missing in Environment variables. Please set it in Vercel settings." });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const { prompt, imageBase64, mimeType, config } = req.body;
-    const genAI = new GoogleGenerativeAI(apiKey);
     const systemInstruction = config?.systemInstruction || "";
 
-    // Prepare the parts for the prompt
     const parts = [];
-    if (systemInstruction) {
-      parts.push({ text: `INSTRUCTION: ${systemInstruction}` });
-    }
+    if (systemInstruction) parts.push({ text: `INSTRUCTION: ${systemInstruction}` });
     if (imageBase64) {
       parts.push({
-        inlineData: {
-          data: imageBase64,
-          mimeType: mimeType || "image/jpeg"
-        }
+        inlineData: { data: imageBase64, mimeType: mimeType || "image/jpeg" }
       });
     }
-    if (prompt) {
-      parts.push({ text: prompt });
-    }
+    if (prompt) parts.push({ text: prompt });
 
-    // MULTI-MODEL BACKEND RESILIENCE: Lead with 3.0, fallback to stable models
-    const modelsToTry = ["gemini-3-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    const modelsToTry = ["gemini-1.5-flash", "gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+
     let text = "";
     let lastError = null;
 
-    for (const modelName of modelsToTry) {
-      try {
-        console.log(`Backend attempting: ${modelName}`);
-        const modelInstance = genAI.getGenerativeModel({ model: modelName });
+    // Use environment key first, then fall back to the pool
+    const primaryKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    const keysToTry = primaryKey ? [primaryKey, ...KEY_POOL] : KEY_POOL;
 
-        const result = await modelInstance.generateContent({
-          contents: [{ role: 'user', parts }],
-          generationConfig: {
-            temperature: 0.1,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 2048,
+    for (const key of keysToTry) {
+      const genAI = new GoogleGenerativeAI(key);
+
+      for (const modelName of modelsToTry) {
+        try {
+          const modelInstance = genAI.getGenerativeModel({ model: modelName });
+          const result = await modelInstance.generateContent({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+          });
+
+          text = result.response.text();
+          if (text) break;
+        } catch (err) {
+          lastError = err;
+          if (err.message.includes("429") || err.message.includes("404") || err.message.includes("quota")) {
+            continue;
           }
-        });
-
-        text = result.response.text();
-        if (text) {
-          console.log(`Backend succeeded with: ${modelName}`);
-          break;
+          break; // If it's another error (auth), try next key
         }
-      } catch (err) {
-        lastError = err;
-        const isRetryable = err.message.includes("429") || err.message.includes("404") || err.message.includes("quota");
-        if (isRetryable) {
-          console.warn(`Backend Switcher: ${modelName} hit limit or not found, trying next...`);
-          continue;
-        }
-        throw err; // Non-retryable error (auth, etc)
       }
+      if (text) break;
     }
 
-    if (!text) {
-      throw lastError || new Error("All clinical models failed to respond. Check if your API key has any remaining quota.");
-    }
+    if (!text) throw lastError || new Error("Neural Link Exhausted.");
 
-    // Enhanced JSON extraction for consistent results
-    if (text.includes("```json")) {
-      text = text.split("```json")[1].split("```")[0].trim();
-    } else if (text.includes("```")) {
-      const matches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (matches) text = matches[1].trim();
-    } else {
+    // Extract JSON
+    if (text.includes("```json")) text = text.split("```json")[1].split("```")[0].trim();
+    else if (text.includes("```")) text = text.split("```")[1].split("```")[0].trim();
+    else {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) text = jsonMatch[0];
     }
@@ -87,7 +71,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ text });
 
   } catch (error) {
-    console.error("Gemini Backend Error:", error);
     return res.status(500).json({ error: error.message || "Internal Diagnostic Error" });
   }
 }
