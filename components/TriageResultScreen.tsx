@@ -21,104 +21,90 @@ const TriageResultScreen: React.FC<TriageResultScreenProps> = ({ result, onProce
 
     switch (recommendation) {
         case 'GET_XRAY':
-            themeClass = 'from-red-50 to-white';
-            accentColor = 'text-red-600 bg-red-100/50';
-            btnColor = 'bg-red-600 shadow-red-200';
+            themeClass = 'bg-red-50/50';
+            accentColor = 'text-red-600 bg-red-100';
+            btnColor = 'bg-red-600 hover:bg-red-700 shadow-red-200';
             icon = <AlertIcon />;
-            actionText = 'Critical Indication';
+            actionText = 'X-Ray Recommended';
             showXRayBtn = true;
             break;
         case 'CONSIDER_XRAY':
-            themeClass = 'from-amber-50 to-white';
-            accentColor = 'text-amber-600 bg-amber-100/50';
-            btnColor = 'bg-slate-900 shadow-slate-200';
+            themeClass = 'bg-amber-50/50';
+            accentColor = 'text-amber-600 bg-amber-100';
+            btnColor = 'bg-amber-600 hover:bg-amber-700 shadow-amber-200';
             icon = <InfoIcon />;
-            actionText = 'Observation Required';
+            actionText = 'Review Symptoms';
             showXRayBtn = true;
             break;
         case 'NO_XRAY':
         default:
-            themeClass = 'from-emerald-50 to-white';
-            accentColor = 'text-emerald-600 bg-emerald-100/50';
-            btnColor = 'bg-slate-900 shadow-slate-200';
+            themeClass = 'bg-emerald-50/50';
+            accentColor = 'text-emerald-600 bg-emerald-100';
+            btnColor = 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200';
             icon = <CheckCircleIcon />;
-            actionText = 'Baseline Normal';
+            actionText = 'No X-Ray Needed';
             showXRayBtn = false;
             break;
     }
 
     return (
-        <div className={`flex flex-col h-full bg-white page-transition`}>
-
-            <div className={`px-8 pt-12 pb-12 text-center rounded-b-[3.5rem] bg-gradient-to-b ${themeClass} shadow-sm relative overflow-hidden`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center text-4xl mb-6 mx-auto ${accentColor} border border-white/50 shadow-xl shadow-slate-200/50`}>
+        <div className={`flex flex-col h-full -m-0 bg-white`}>
+            
+            <div className={`px-6 pt-10 pb-8 text-center rounded-b-[3rem] ${themeClass}`}>
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-5 mx-auto ${accentColor} shadow-sm`}>
                     {icon}
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-3">{actionText}</h2>
-                <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white shadow-sm">
-                    <span className={`w-2 h-2 rounded-full animate-pulse ${recommendation === 'GET_XRAY' ? 'bg-red-500' : recommendation === 'CONSIDER_XRAY' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{urgencyLabel}</span>
-                </div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{actionText}</h2>
+                <p className="text-slate-500 font-bold mt-2 text-sm uppercase tracking-wide">{urgencyLabel}</p>
             </div>
 
-            <div className="flex-1 px-8 py-10 overflow-y-auto no-scrollbar">
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/60 border border-slate-100 mb-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-150 transition-transform duration-1000 group-hover:rotate-12">
+            <div className="flex-1 px-6 py-6 overflow-y-auto">
+                <div className="bg-white rounded-3xl p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-100 mb-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
                         <ChecklistIconLarge />
                     </div>
-
-                    <div className="flex justify-between items-center mb-10 pb-8 border-b border-slate-50">
+                    
+                    <div className="flex justify-between items-center mb-6 border-b border-slate-50 pb-6">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Neural Risk Index</span>
-                            <div className="flex items-baseline gap-2">
-                                <span className={`text-6xl font-black tracking-tighter ${recommendation === 'GET_XRAY' ? 'text-red-600' : recommendation === 'CONSIDER_XRAY' ? 'text-amber-500' : 'text-emerald-600'}`}>
-                                    {riskScore}
-                                </span>
-                                <span className="text-xl font-black text-slate-300">%</span>
+                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Risk Score</span>
+                             <span className={`text-5xl font-black tracking-tighter ${recommendation === 'GET_XRAY' ? 'text-red-600' : recommendation === 'CONSIDER_XRAY' ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                {riskScore}%
+                            </span>
+                        </div>
+                        <div className="h-12 w-px bg-slate-100 mx-4"></div>
+                        <div className="flex-1">
+                            <div className="text-xs font-medium text-slate-500 leading-snug">
+                                Based on clinical symptoms provided.
                             </div>
                         </div>
-                        <div className="h-16 w-px bg-slate-100 mx-6"></div>
-                        <div className="flex-1">
-                            <p className="text-[11px] font-bold text-slate-400 leading-relaxed max-w-[120px]">
-                                Calculated based on multi-variate symptom analysis.
-                            </p>
-                        </div>
                     </div>
-
-                    <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span> Internal Logic
+                    
+                    <div>
+                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> AI Reasoning
                         </h3>
-                        <p className="text-sm text-slate-800 leading-relaxed font-bold tracking-tight">
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium">
                             {reasoning}
                         </p>
                     </div>
                 </div>
-
-                <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-3xl flex gap-4 items-center mb-8">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-500 shadow-sm shrink-0"><InfoIcon /></div>
-                    <p className="text-[10px] text-blue-800 font-bold leading-relaxed italic">
-                        The AI suggests further scans based on pattern matching with similar clinical cases.
-                    </p>
-                </div>
             </div>
 
-            <div className="p-8 bg-white border-t border-slate-100 shrink-0">
-                <div className="flex gap-4">
-                    <button
+            <div className="p-6 bg-white border-t border-slate-50">
+                <div className="flex gap-3">
+                    <button 
                         onClick={onBack}
-                        className="flex-1 h-16 rounded-[2rem] bg-slate-50 text-slate-500 font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100 flex items-center justify-center gap-3 text-[10px]"
+                        className="flex-1 h-12 rounded-xl bg-white border-2 border-slate-100 text-slate-600 font-bold hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 text-sm"
                     >
-                        <HomeIcon /> Portal
+                       <HomeIcon /> Home
                     </button>
-
+                    
                     {showXRayBtn && (
-                        <button
+                        <button 
                             onClick={onProceedToXRay}
-                            className={`flex-[1.5] h-16 rounded-[2rem] text-white font-black uppercase tracking-[0.2em] shadow-xl hover:translate-y-[-4px] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-[10px] ${btnColor}`}
+                            className={`flex-[1.5] h-12 rounded-xl text-white font-bold shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm ${btnColor}`}
                         >
-                            <CameraIcon /> Launch Imaging
+                            <CameraIcon /> Start X-Ray
                         </button>
                     )}
                 </div>

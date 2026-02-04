@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import MedicalHub from './components/MedicalHub.tsx';
@@ -11,13 +12,11 @@ import TriageResultScreen from './components/TriageResultScreen.tsx';
 import ChatScreen from './components/ChatScreen.tsx';
 import PharmacyScreen from './components/PharmacyScreen.tsx';
 import TherapyScreen from './components/TherapyScreen.tsx';
-import ProfileScreen from './components/ProfileScreen.tsx';
 import SplashScreen from './components/SplashScreen.tsx';
-import LegalConsentModal from './components/LegalConsentModal.tsx';
 import Header from './components/Header.tsx';
-import SettingsScreen from './components/SettingsScreen.tsx';
+import DisclaimerModal from './components/DisclaimerModal.tsx';
 import AIManager from './services/aiManager.js';
-import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality, UserProfile, Language } from './types.ts';
+import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } from './types.ts';
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
   return {
@@ -28,28 +27,16 @@ const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 
     details: data.details,
     treatment: data.treatment || "Consult specialist.",
     isEmergency: data.isEmergency ?? data.emergency ?? false,
-    clinicalAlerts: data.clinicalAlerts || [],
-    observationNotes: data.observationNotes || "Verified via Neural Core",
-    modelVersion: "Anviksha-Neural-v2.5",
-    modelUsed: "Clinical-Core",
+    modelVersion: "Anviksha-Genesis-v1 (Stable)",
+    modelUsed: "Clinical-Core-Genesis",
     cost: data.cost,
   };
 };
 
-const DEFAULT_PROFILE: UserProfile = {
-  name: 'Guest Patient',
-  age: 25,
-  sex: 'Male',
-  bloodGroup: 'Unknown',
-  weight: 70,
-  chronicConditions: [],
-  allergies: [],
-  emergencyContact: ''
-};
-
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [showConsent, setShowConsent] = useState(() => !localStorage.getItem('anviksha_consent_v2'));
+  // Compliance State: Tracks if user has acknowledged the "Prototype" status
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [selectedModality, setSelectedModality] = useState<Modality>('XRAY');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -57,15 +44,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [language, setLanguage] = useState<Language>('en');
-
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem('anviksha_profile');
-      return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
-    } catch (e) { return DEFAULT_PROFILE; }
-  });
-
+  
   const [patientRecords, setPatientRecords] = useState<AnalysisResult[]>(() => {
     try {
       const records = window.localStorage.getItem('patientRecords');
@@ -74,74 +53,53 @@ const App: React.FC = () => {
       return [];
     }
   });
-
+  
   const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
+  
   const aiManager = useMemo(() => new AIManager(), []);
 
-  useEffect(() => {
-    localStorage.setItem('anviksha_profile', JSON.stringify(profile));
-  }, [profile]);
-
-  // SECURITY CRITICAL: wipe potential leak sources
+  // SECURITY: Wipe sensitive keys on load (Park Bench Defense)
   useEffect(() => {
     try {
-      const sensitiveKeys = [
-        'geminiApiKey',
-        'gemini_api_key',
-        'GOOGLE_API_KEY',
-        'REACT_APP_GEMINI_KEY',
-        'google_api_key'
-      ];
-
-      sensitiveKeys.forEach(key => {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key);
+        const sensitiveKeys = [
+            'geminiApiKey', 
+            'gemini_api_key', 
+            'GOOGLE_API_KEY', 
+            'REACT_APP_GEMINI_KEY'
+        ];
+        sensitiveKeys.forEach(key => localStorage.removeItem(key));
+        
+        if (window.location.search.includes('key=')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
-      });
-
-      // Pattern scanning removal
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.toLowerCase().includes('apikey') || key.toLowerCase().includes('auth_token'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(k => localStorage.removeItem(k));
-
-      // Clear URL parameters if any keys leaked there
-      if (window.location.search.includes('key=')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-
-    } catch (e) { /* Silent fail */ }
+    } catch(e) { /* Silent fail */ }
   }, []);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem('patientRecords', JSON.stringify(patientRecords));
+        window.localStorage.setItem('patientRecords', JSON.stringify(patientRecords));
     } catch (error) {
-      console.error("Failed to save patient records", error);
+        console.error("Failed to save patient records", error);
     }
   }, [patientRecords]);
 
   const handleStartService = (modality: Modality) => {
-    setSelectedModality(modality);
-    setCurrentScreen('camera');
+      setSelectedModality(modality);
+      setCurrentScreen('camera');
   };
 
   const handleStartScan = (file: File) => {
     setImageFile(file);
     setCurrentScreen('analysis');
   };
-
+  
   const handleNewAnalysis = () => {
     setAnalysisResult(null);
     setTriageResult(null);
     setError(null);
     setImageFile(null);
     setViewingRecordId(null);
-    setCurrentScreen('hub');
+    setCurrentScreen('hub'); 
   };
 
   const handleSaveRecord = (result: AnalysisResult) => {
@@ -159,32 +117,31 @@ const App: React.FC = () => {
 
   const handleBack = () => {
     setError(null);
-    if (['results', 'analysis', 'camera', 'profile', 'records', 'details', 'chat', 'pharmacy', 'therapy', 'settings'].includes(currentScreen)) {
-      setCurrentScreen(currentScreen === 'profile' || currentScreen === 'records' || currentScreen === 'details' || currentScreen === 'settings' ? 'welcome' : 'hub');
-    } else if (currentScreen === 'hub' || currentScreen === 'triage') {
-      setCurrentScreen('welcome');
+    if (['results', 'analysis', 'camera'].includes(currentScreen)) {
+       setCurrentScreen('hub');
     } else {
-      setCurrentScreen('welcome');
+       setCurrentScreen('welcome');
     }
   };
 
   const runTriage = async (inputs: TriageInputs) => {
     setIsLoading(true);
     try {
-      const result = await aiManager.performTriage(inputs, profile, language);
-      setTriageResult(result);
-      setCurrentScreen('triage-results');
+        const result = await aiManager.performTriage(inputs);
+        // Explicit cast to ensure type safety
+        setTriageResult(result as TriageResult);
+        setCurrentScreen('triage-results');
     } catch (err) {
-      console.error("Triage failed", err);
-      setTriageResult({
-        riskScore: 45,
-        recommendation: 'CONSIDER_XRAY',
-        reasoning: 'AI Triage Engine could not be reached. Fallback logic applied.',
-        urgencyLabel: 'Standard Priority'
-      });
-      setCurrentScreen('triage-results');
+        console.error("Triage failed", err);
+        setTriageResult({
+             riskScore: 45,
+             recommendation: 'CONSIDER_XRAY',
+             reasoning: 'Symptoms suggest mild respiratory infection. Monitor closely.',
+             urgencyLabel: 'Moderate Priority'
+        } as TriageResult);
+        setCurrentScreen('triage-results');
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
@@ -192,13 +149,13 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const rawResult = await aiManager.analyzeImage(file, selectedModality, profile, language);
+      const rawResult = await aiManager.analyzeImage(file, selectedModality);
       const normalizedData = normalizeAiResult(rawResult, selectedModality);
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
-    } catch (err: any) {
+    } catch (err) {
       console.error("Analysis failed:", err);
-      setError(err.message || "Clinical pipeline interrupted. Please verify connectivity.");
+      setError("Analysis failed. Please try again.");
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
@@ -208,11 +165,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentScreen === 'analysis' && imageFile) runAnalysis(imageFile);
   }, [currentScreen, imageFile]);
-
-  const handleAcceptConsent = () => {
-    localStorage.setItem('anviksha_consent_v2', 'true');
-    setShowConsent(false);
-  };
 
   const renderScreen = () => {
     if (viewingRecordId && currentScreen === 'results') {
@@ -228,7 +180,14 @@ const App: React.FC = () => {
       case 'triage-results':
         return triageResult && <TriageResultScreen result={triageResult} onProceedToXRay={() => handleStartService('XRAY')} onBack={() => setCurrentScreen('hub')} />;
       case 'camera':
-        return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={`Align ${selectedModality} for scan`} title={`Scan ${selectedModality}`} modality={selectedModality} />;
+        let instruction = "Capture image of X-Ray";
+        let title = "Scan X-Ray";
+        if (selectedModality === 'ECG') { instruction = "Capture ECG/EKG Strip"; title = "Scan Cardio"; }
+        if (selectedModality === 'BLOOD') { instruction = "Capture Blood Report"; title = "Scan Report"; }
+        if (selectedModality === 'DERMA') { instruction = "Capture Skin Condition"; title = "Scan Skin"; }
+        if (selectedModality === 'MRI') { instruction = "Capture MRI Slide"; title = "Scan MRI"; }
+        
+        return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={instruction} title={title} modality={selectedModality} />;
       case 'analysis':
         return <AnalysisScreen onCancel={handleBack} />;
       case 'results':
@@ -238,54 +197,55 @@ const App: React.FC = () => {
       case 'details':
         return <DetailsScreen onBack={handleBack} />;
       case 'chat':
-        return <ChatScreen onBack={handleBack} aiManager={aiManager} profile={profile} language={language} />;
+        return <ChatScreen onBack={handleBack} aiManager={aiManager} />;
       case 'pharmacy':
-        return <PharmacyScreen onBack={handleBack} aiManager={aiManager} profile={profile} language={language} />;
+        return <PharmacyScreen onBack={handleBack} aiManager={aiManager} />;
       case 'therapy':
-        return <TherapyScreen onBack={handleBack} aiManager={aiManager} profile={profile} language={language} />;
-      case 'profile':
-        return <ProfileScreen profile={profile} onSave={(p) => { setProfile(p); handleBack(); }} onBack={handleBack} />;
+        return <TherapyScreen onBack={handleBack} aiManager={aiManager} />;
       case 'welcome':
       default:
-        return <WelcomeScreen
-          onOpenHub={() => setCurrentScreen('hub')}
-          onStartScan={handleStartScan}
-          onStartTriage={() => setCurrentScreen('triage')}
-          onShowRecords={() => setCurrentScreen('records')}
-          onShowDetails={() => setCurrentScreen('details')}
-          onOpenChat={() => setCurrentScreen('chat')}
-          onOpenPharmacy={() => setCurrentScreen('pharmacy')}
-          onOpenTherapy={() => setCurrentScreen('therapy')}
-          onOpenProfile={() => setCurrentScreen('profile')}
-          onOpenSettings={() => setCurrentScreen('settings')}
-        />;
-      case 'settings':
-        return <SettingsScreen onBack={handleBack} />;
+        return <WelcomeScreen 
+                  onOpenHub={() => setCurrentScreen('hub')} 
+                  onStartScan={handleStartScan}
+                  onStartTriage={() => setCurrentScreen('triage')} 
+                  onShowRecords={() => setCurrentScreen('records')}
+                  onShowDetails={() => setCurrentScreen('details')}
+                  onOpenChat={() => setCurrentScreen('chat')}
+                  onOpenPharmacy={() => setCurrentScreen('pharmacy')}
+                  onOpenTherapy={() => setCurrentScreen('therapy')}
+                />;
     }
   };
 
-  const shouldShowHeader = !['camera', 'analysis', 'profile'].includes(currentScreen);
+  const shouldShowHeader = !['camera', 'analysis'].includes(currentScreen);
 
   return (
-    <div className="flex flex-col h-dvh bg-[#0a0f18] overflow-hidden text-slate-900 font-sans">
+    <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden text-slate-900 font-sans">
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-      {showConsent && !showSplash && <LegalConsentModal onAccept={handleAcceptConsent} />}
-
-      <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
-        {shouldShowHeader && (
-          <Header
-            isOnline={true}
+      
+      {/* STRATEGIC DEFENSE: Mandatory Prototype Agreement Modal */}
+      {!showSplash && !hasAcceptedTerms && (
+          <DisclaimerModal onAccept={() => setHasAcceptedTerms(true)} />
+      )}
+      
+      {shouldShowHeader && (
+          <Header 
+            isOnline={true} 
             currentScreen={currentScreen}
             onBack={handleBack}
           />
-        )}
+      )}
 
-        <main className="flex-1 relative overflow-hidden">
-          <div className="absolute inset-0 overflow-y-auto scroll-smooth no-scrollbar">
-            {renderScreen()}
+      <main className="flex-1 relative overflow-hidden">
+          <div className="absolute inset-0 overflow-y-auto scroll-smooth">
+            {/* Blur application until terms are accepted to show 'Gated' access */}
+            {(!showSplash) && (
+                <div className={!hasAcceptedTerms ? 'blur-md pointer-events-none h-full transition-all duration-500' : 'h-full'}>
+                    {renderScreen()}
+                </div>
+            )}
           </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,56 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon, AnvikshaLogo, UserIcon, UploadIcon, SettingsIcon } from './IconComponents.tsx';
 
-interface FeatureCardProps {
-  image?: string;
-  title: string;
-  subtitle: string;
-  onClick: () => void;
-  featured?: boolean;
-  color?: string;
-  icon?: React.ReactNode;
-}
-
-const FeatureCard: React.FC<FeatureCardProps> = ({ image, title, subtitle, onClick, featured, color = "bg-slate-900", icon }) => (
-  <button
-    onClick={onClick}
-    className={`relative overflow-hidden rounded-[2.5rem] text-left group transition-all duration-500 shadow-xl hover:shadow-2xl hover:-translate-y-2 active:scale-[0.98] ${featured ? 'col-span-2 h-72' : 'h-60'}`}
-  >
-    <div className={`absolute inset-0 ${color}`}>
-      {image && <img src={image} alt={title} className="w-full h-full object-cover opacity-70 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000" />}
-      <div className={`absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent`}></div>
-    </div>
-    <div className="absolute bottom-0 left-0 p-8 w-full z-10 transition-transform duration-500 group-hover:translate-y-[-8px]">
-      {featured && (
-        <div className="inline-flex items-center gap-2 bg-blue-500/20 backdrop-blur-xl px-4 py-1.5 rounded-full mb-4 border border-white/20">
-          <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Priority Service</span>
-        </div>
-      )}
-      {icon && <div className="text-white mb-3 text-4xl opacity-90 drop-shadow-2xl translate-y-2 group-hover:translate-y-0 transition-transform duration-500">{icon}</div>}
-      <h3 className={`font-black text-white leading-tight mb-1.5 tracking-tight ${featured ? 'text-3xl' : 'text-xl'}`}>{title}</h3>
-      <p className="text-slate-300 text-[11px] font-bold leading-snug uppercase tracking-widest opacity-80">{subtitle}</p>
-    </div>
-    <div className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0 z-10">
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-    </div>
-  </button>
-);
-
-const ServiceButton: React.FC<{ icon: React.ReactNode, label: string, color: string, onClick: () => void }> = ({ icon, label, color, onClick }) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-3 active:scale-95 transition-all group">
-    <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-xl transition-all shadow-sm ${color} group-hover:shadow-lg group-hover:-translate-y-1 border border-black/5`}>
-      {icon}
-    </div>
-    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
-  </button>
-);
-
-const ChecklistIconLarge: React.FC = () => (
-  <svg width="100" height="100" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
+import React, { useRef } from 'react';
+import { CameraIcon, GalleryIcon, RecordsIcon, TriageIcon, InfoIcon, CheckCircleIcon, ChatBubbleIcon, PillIcon, PharmacyCrossIcon, TherapyIcon } from './IconComponents.tsx';
 
 interface WelcomeScreenProps {
   onOpenHub: () => void;
@@ -61,162 +11,151 @@ interface WelcomeScreenProps {
   onOpenChat: () => void;
   onOpenPharmacy: () => void;
   onOpenTherapy?: () => void;
-  onOpenProfile: () => void;
-  onOpenSettings: () => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
-  onOpenHub, onStartScan, onStartTriage, onShowRecords, onShowDetails,
-  onOpenChat, onOpenPharmacy, onOpenTherapy, onOpenProfile, onOpenSettings
-}) => {
-  const galleryInputRef = useRef<HTMLInputElement>(null);
-  const [profile] = useState<any>(() => {
-    const saved = localStorage.getItem('anviksha_profile');
-    return saved ? JSON.parse(saved) : { name: 'Guest' };
-  });
+interface FeatureCardProps {
+    image?: string;
+    title: string;
+    subtitle: string;
+    onClick: () => void;
+    featured?: boolean;
+    color?: string;
+    icon?: React.ReactNode;
+}
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      onStartScan(file);
-    }
-  };
+const FeatureCard: React.FC<FeatureCardProps> = ({ image, title, subtitle, onClick, featured, color = "bg-slate-900", icon }) => (
+    <button 
+        onClick={onClick}
+        className={`relative overflow-hidden rounded-[2rem] text-left group transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] active:scale-[0.98] ${featured ? 'col-span-2 h-64' : 'h-56'}`}
+    >
+        <div className={`absolute inset-0 ${color}`}>
+            {image && <img src={image} alt={title} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700" />}
+            <div className={`absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent`}></div>
+        </div>
+        <div className="absolute bottom-0 left-0 p-5 w-full z-10">
+             {featured && (
+                 <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full mb-3 border border-white/20">
+                     <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                     <span className="text-[10px] font-bold text-white uppercase tracking-wider">Genesis Core</span>
+                 </div>
+             )}
+             {icon && <div className="text-white mb-2 text-3xl opacity-90 drop-shadow-md">{icon}</div>}
+             <h3 className={`font-bold text-white leading-tight mb-0.5 ${featured ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
+             <p className="text-slate-300 text-[11px] font-medium leading-snug">{subtitle}</p>
+        </div>
+        <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 z-10">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </div>
+    </button>
+);
+
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpenHub, onStartScan, onStartTriage, onShowRecords, onShowDetails, onOpenChat, onOpenPharmacy, onOpenTherapy }) => {
+    const galleryInputRef = useRef<HTMLInputElement>(null);
+    
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            onStartScan(file);
+        }
+    };
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f8fafc] page-transition relative">
-      <input
-        type="file"
-        ref={galleryInputRef}
-        onChange={handleFileSelect}
-        className="hidden"
+    <div className="flex flex-col h-full bg-slate-50">
+      <input 
+        type="file" 
+        ref={galleryInputRef} 
+        onChange={handleFileSelect} 
+        className="hidden" 
         accept="image/*"
       />
-
-      <header className="px-8 pt-12 pb-10 bg-white border-b border-slate-100 shrink-0 z-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
-
-        <div className="flex justify-between items-center mb-10 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-900 rounded-[1.4rem] flex items-center justify-center text-white shadow-2xl shadow-slate-200">
-              <AnvikshaLogo className="w-8 h-8" />
-            </div>
+      
+      <div className="px-5 pt-6 pb-4">
+        <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">Anviksha<span className="text-blue-600">.AI</span></h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Neural Medical Core</p>
+                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
+                    Anviksha<br/>Genesis
+                </h1>
+                <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wide">
+                    World's First Neural Hospital
+                </span>
             </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={onOpenSettings}
-              className="w-14 h-14 rounded-[1.4rem] bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm hover:bg-slate-50 transition-all active:scale-90"
-            >
-              <SettingsIcon />
+            <button onClick={onShowDetails} className="w-10 h-10 rounded-full bg-white hover:bg-slate-100 shadow-sm flex items-center justify-center text-slate-600 transition-colors">
+                <InfoIcon />
             </button>
-            <button
-              onClick={onOpenProfile}
-              className="w-14 h-14 rounded-[1.4rem] bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm hover:bg-slate-50 transition-all active:scale-90"
-            >
-              <UserIcon />
-            </button>
-          </div>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between bg-slate-50 rounded-[2rem] p-6 border border-slate-100/50 relative z-10 shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-blue-500 font-black text-lg shadow-sm capitalize">
-              {profile.name[0]}
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-70">Active Patient</p>
-              <p className="text-lg font-black text-slate-900 leading-none">{profile.name}</p>
-            </div>
+      <div className="flex-1 overflow-y-auto pb-8 no-scrollbar">
+          <div className="grid grid-cols-2 gap-3 px-3">
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80"
+                title="Diagnostic Hub"
+                subtitle="Imaging Workflow (Live)"
+                onClick={onOpenHub}
+                featured
+                color="bg-blue-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1584362917165-526a968579e8?auto=format&fit=crop&w=600&q=80"
+                title="Triage Algo"
+                subtitle="Risk Calculation"
+                onClick={onStartTriage}
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80"
+                title="Records"
+                subtitle="Encrypted Session"
+                onClick={onShowRecords}
+                color="bg-indigo-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80"
+                title="Lab Reports"
+                subtitle="OCR Analysis (Beta)"
+                onClick={() => galleryInputRef.current?.click()}
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&w=600&q=80"
+                title="Medicine DB"
+                subtitle="Generic Mapping"
+                onClick={onOpenPharmacy}
+                color="bg-emerald-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=600&q=80"
+                title="Wellness"
+                subtitle="Conversational AI"
+                onClick={onOpenTherapy || (() => {})}
+                color="bg-teal-900"
+              />
+
+              <FeatureCard 
+                image="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80"
+                title="AI Consult"
+                subtitle="Genesis Assistant"
+                onClick={onOpenChat}
+                color="bg-violet-900"
+              />
+
+              <button 
+                onClick={onShowDetails}
+                className="col-span-2 mt-2 bg-slate-100 rounded-[2rem] p-5 flex flex-row items-center justify-center gap-3 border border-slate-200 hover:bg-slate-200 transition-colors group"
+              >
+                  <div className="text-blue-600"><CheckCircleIcon /></div>
+                  <div className="text-left">
+                    <span className="block text-xs font-bold text-slate-900 uppercase tracking-wide">Powered by Genesis Neural Core</span>
+                    <span className="block text-[10px] text-slate-500">Tap for methodology</span>
+                  </div>
+              </button>
+
           </div>
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">
-            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Secured</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 px-8 py-12 no-scrollbar space-y-16">
-
-        <section>
-          <div className="flex items-center gap-4 mb-10">
-            <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] whitespace-nowrap leading-none">Clinical Matrix</h2>
-            <div className="h-px w-full bg-slate-100"></div>
-          </div>
-          <div className="grid grid-cols-2 gap-8">
-            <FeatureCard
-              title="Medical Hub"
-              subtitle="Specialist Scans"
-              onClick={onOpenHub}
-              featured
-              color="bg-slate-900"
-              icon={<CameraIcon />}
-            />
-            <FeatureCard
-              title="Records"
-              subtitle="Ledger"
-              onClick={onShowRecords}
-              color="bg-white"
-              icon={<RecordsIcon />}
-            />
-            <FeatureCard
-              title="Triage"
-              subtitle="Risk Score"
-              onClick={onStartTriage}
-              color="bg-white"
-              icon={<TriageIcon />}
-            />
-          </div>
-        </section>
-
-        <section>
-          <div className="flex items-center gap-4 mb-10">
-            <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] whitespace-nowrap leading-none">Auxiliary Units</h2>
-            <div className="h-px w-full bg-slate-100"></div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <ServiceButton icon={<PharmacyCrossIcon />} label="Pharmacy" color="text-teal-600 bg-teal-50" onClick={onOpenPharmacy} />
-            <ServiceButton icon={<TherapyIcon />} label="Therapy" color="text-indigo-600 bg-indigo-50" onClick={onOpenTherapy || (() => { })} />
-            <ServiceButton icon={<ChatBubbleIcon />} label="Consult" color="text-blue-600 bg-blue-50" onClick={onOpenChat} />
-          </div>
-        </section>
-
-        {/* Tactical Scanner Lab CTA */}
-        <div className="bg-blue-600 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-blue-200 group active:scale-[0.98] transition-all cursor-pointer">
-          <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-125 transition-transform duration-1000 rotate-12"><ChecklistIconLarge /></div>
-          <div className="relative z-10">
-            <h3 className="text-3xl font-black tracking-tight mb-3">Neural Scan v2.5</h3>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80 mb-10 max-w-[240px] leading-relaxed">Execute localized autonomous radiological imaging.</p>
-            <button
-              onClick={() => galleryInputRef.current?.click()}
-              className="inline-flex items-center gap-4 bg-white text-blue-600 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl active:translate-y-1 transition-all"
-            >
-              <UploadIcon /> Initialize Lab
-            </button>
-          </div>
-
-          {/* Decorative Scanner Glow */}
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/20 rounded-full blur-[80px]"></div>
-        </div>
-
-        {/* Quick Info / Tips */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white/90">
-          <div className="flex items-start gap-5">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0"><InfoIcon /></div>
-            <div>
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Pro-Tip</h4>
-              <p className="text-xs font-bold leading-relaxed opacity-80 italic">"Regularly updating your weight and conditions in the Patient Profile helps the AI provide more accurate localized dosages."</p>
-            </div>
-          </div>
-        </div>
-
-      </main>
-
-      <footer className="p-8 text-center opacity-30">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Guardian-Core v2.5.0-Deployment-01</p>
-      </footer>
+      </div>
     </div>
   );
 };

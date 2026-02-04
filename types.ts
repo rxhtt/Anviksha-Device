@@ -1,26 +1,13 @@
 
-export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings' | 'chat' | 'pharmacy' | 'therapy' | 'profile';
+export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings' | 'chat' | 'pharmacy' | 'therapy';
 
 export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
-export type Language = 'en' | 'hi';
 
-export type Modality =
+export type Modality = 
   | 'XRAY' | 'ECG' | 'BLOOD' | 'MRI' | 'CT' | 'DERMA' | 'GENERAL'
-  | 'DENTAL' | 'OPHTHAL' | 'ENT' | 'PEDIATRIC' | 'GYNE' | 'ORTHO'
+  | 'DENTAL' | 'OPHTHAL' | 'ENT' | 'PEDIATRIC' | 'GYNE' | 'ORTHO' 
   | 'UROLOGY' | 'GASTRO' | 'NEURO' | 'ONCO' | 'PATHOLOGY' | 'GENETIC'
   | 'VITALS' | 'DIET' | 'MENTAL' | 'SLEEP' | 'PREGNANCY' | 'VACCINE';
-
-export interface UserProfile {
-  name: string;
-  age: number;
-  sex: 'Male' | 'Female' | 'Other';
-  bloodGroup: string;
-  weight: number;
-  lastCheckedWeight?: number;
-  chronicConditions: string[];
-  allergies: string[];
-  emergencyContact: string;
-}
 
 export interface AnalysisResult {
   id: string;
@@ -32,8 +19,6 @@ export interface AnalysisResult {
   details?: string;
   treatment: string;
   isEmergency: boolean;
-  clinicalAlerts?: string[];
-  observationNotes?: string;
   modelVersion?: string;
   modelUsed?: string;
   cost?: number;
@@ -65,23 +50,23 @@ export interface ChatMessage {
 }
 
 export interface ChatSession {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  timestamp: number;
+    id: string;
+    title: string;
+    messages: ChatMessage[];
+    timestamp: number;
 }
 
 export interface Medicine {
-  name: string;
-  genericName: string;
-  type: string;
-  dosage: string;
-  price: number;
-  genericPrice: number;
-  explanation: string;
+    name: string;
+    genericName: string;
+    type: string;
+    dosage: string;
+    price: number;
+    genericPrice: number;
+    explanation: string;
 }
 
 export interface PharmacyResult {
-  diagnosis: string;
-  medicines: Medicine[];
+    diagnosis: string;
+    medicines: Medicine[];
 }

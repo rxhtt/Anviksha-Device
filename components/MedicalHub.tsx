@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-    LungsIcon, EKGIcon, DropIcon, BrainIcon, BoneIcon, MicroscopeIcon,
+import { 
+    LungsIcon, EKGIcon, DropIcon, BrainIcon, BoneIcon, MicroscopeIcon, 
     ToothIcon, EyeIcon, BabyIcon, DnaIcon, PillIcon, WomanIcon, StomachIcon, AppleIcon,
     TriageIcon, InfoIcon, CameraIcon, UploadIcon, CheckCircleIcon
 } from './IconComponents.tsx';
@@ -20,14 +20,14 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ icon, label, color, onClick }) => (
-    <button
+    <button 
         onClick={onClick}
-        className="flex flex-col items-center justify-center bg-white p-5 rounded-[2rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-xl hover:-translate-y-1.5 active:scale-95 transition-all duration-300 h-full group"
+        className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-300 h-full"
     >
-        <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center text-2xl mb-4 shadow-sm group-hover:scale-110 transition-transform duration-500`}>
+        <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-2xl mb-3 shadow-inner`}>
             {icon}
         </div>
-        <span className="text-[11px] font-extrabold text-slate-800 text-center leading-tight tracking-tight uppercase">{label}</span>
+        <span className="text-xs font-bold text-slate-700 text-center leading-tight">{label}</span>
     </button>
 );
 
@@ -44,68 +44,61 @@ interface InstructionModalProps {
 
 const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, onConfirm, title, instruction, explanation, icon, color }) => {
     if (!isOpen) return null;
-
+    
     return (
-        <div className="absolute inset-0 z-[100] flex items-end justify-center px-0 py-0 h-full w-full">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-fadeIn" onClick={onClose}></div>
+        <div className="absolute inset-0 z-[100] flex items-center justify-center px-4 py-6 h-full w-full">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md transition-opacity animate-fadeIn" onClick={onClose}></div>
 
-            <div className="relative w-full bg-white rounded-t-[3rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-slideInUp border-t border-white/20">
-                <div className="h-1.5 w-12 bg-slate-200 mx-auto rounded-full mt-4 mb-2 shrink-0"></div>
-
-                <div className="p-8 pb-4 bg-white shrink-0 text-center relative">
-                    <div className={`w-28 h-28 mx-auto rounded-[2.5rem] flex items-center justify-center text-5xl shadow-2xl shadow-slate-100 mb-6 ${color} ring-8 ring-slate-50/50`}>
+            <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp border-4 border-white/20">
+                <div className="p-8 pb-6 bg-white shrink-0 text-center relative">
+                    <div className={`w-24 h-24 mx-auto rounded-[2rem] flex items-center justify-center text-5xl shadow-2xl shadow-slate-200 mb-5 ${color} ring-8 ring-slate-50`}>
                         {icon}
                     </div>
-                    <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-2 leading-tight">{title}</h3>
-                    <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">Clinical Department</p>
-
-                    <button
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1 leading-tight">{title}</h3>
+                    <div className="h-1.5 w-12 bg-slate-100 mx-auto rounded-full mt-3"></div>
+                    
+                    <button 
                         onClick={onClose}
-                        className="absolute top-2 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition-all active:scale-90"
+                        className="absolute top-6 right-6 w-9 h-9 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all"
                     >
                         ✕
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-8 pb-6 space-y-6 no-scrollbar">
-                    <div className="glass-card p-6 rounded-[2rem] border border-blue-50 bg-blue-50/30">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3">Preparation Guidelines</h4>
-                        <p className="text-sm font-semibold text-slate-800 leading-relaxed italic">
-                            "{instruction}"
+                <div className="flex-1 overflow-y-auto px-8 pb-4 space-y-6">
+                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Standard Protocol</h4>
+                        <p className="text-sm font-medium text-slate-800 leading-relaxed">
+                            {instruction}
                         </p>
                     </div>
 
                     {explanation && (
                         <div className="px-2">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">AI Diagnostic Scope</h4>
-                            <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                            <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">AI Capabilities</h4>
+                            <p className="text-sm text-slate-500 leading-relaxed">
                                 {explanation}
                             </p>
                         </div>
                     )}
-
-                    <div className="flex items-center justify-between px-2 pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                            <div className="flex -space-x-2">
-                                <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">PDF</div>
-                                <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">JPG</div>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-widest">HL7 Compliant</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-emerald-500">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Secure Cloud Path</span>
-                        </div>
+                    
+                    <div className="flex items-center justify-between px-2 py-2 border-t border-slate-50">
+                         <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                             <span className="bg-slate-100 p-1 rounded">PDF</span>
+                             <span className="bg-slate-100 p-1 rounded">JPG</span>
+                             <span className="bg-slate-100 p-1 rounded">PNG</span>
+                         </div>
+                         <div className="text-[10px] font-bold text-slate-400 uppercase">Secure Upload</div>
                     </div>
                 </div>
 
-                <div className="p-8 bg-white border-t border-slate-50 shrink-0">
-                    <button
-                        onClick={onConfirm}
-                        className="w-full py-5 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] transition-all text-white rounded-[1.5rem] font-bold text-base shadow-2xl shadow-slate-300 flex items-center justify-center gap-4 group"
+                <div className="p-6 bg-white border-t border-slate-50 shrink-0">
+                    <button 
+                        onClick={onConfirm} 
+                        className="w-full py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] transition-all text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-300 flex items-center justify-center gap-3 group"
                     >
-                        <div className="bg-white/20 p-2 rounded-xl group-hover:bg-white/30 transition-colors"><CameraIcon /></div>
-                        <span>Initialize Scan</span>
+                        <div className="bg-white/20 p-1.5 rounded-full group-hover:bg-white/30 transition-colors"><CameraIcon /></div>
+                        <span>Start Analysis</span>
                     </button>
                 </div>
             </div>
@@ -114,38 +107,42 @@ const InstructionModal: React.FC<InstructionModalProps> = ({ isOpen, onClose, on
 }
 
 const HubIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
-    <div className="absolute inset-0 z-[110] flex items-center justify-center px-4 bg-slate-900/40 backdrop-blur-md p-6 h-full w-full">
-        <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden animate-scaleUp shadow-2xl border border-white/20">
-            <div className="bg-slate-900 p-10 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.3),transparent)]"></div>
-                <div className="w-24 h-24 mx-auto bg-blue-600 rounded-3xl text-white flex items-center justify-center text-5xl mb-6 shadow-2xl relative z-10 animate-pulse-slow">
+    <div className="absolute inset-0 z-[90] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm p-6 h-full w-full">
+        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden animate-scaleUp shadow-2xl border border-white/10">
+            <div className="bg-blue-600 p-8 text-center relative overflow-hidden">
+                <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-blue-500 rounded-full blur-3xl opacity-50"></div>
+                <div className="w-20 h-20 mx-auto bg-white/10 backdrop-blur-md rounded-2xl text-white flex items-center justify-center text-4xl mb-4 shadow-inner relative z-10 border border-white/20">
                     <LungsIcon />
                 </div>
-                <h2 className="text-3xl font-black text-white relative z-10 tracking-tight">Anviksha Core</h2>
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mt-2 relative z-10">Neural Diagnostic Engine</p>
+                <h2 className="text-2xl font-bold text-white relative z-10">Full Body Scan</h2>
+                <p className="text-xs font-bold text-blue-100 uppercase tracking-widest mt-1 relative z-10">Diagnostic Imaging</p>
             </div>
-
-            <div className="p-10">
-                <div className="space-y-6">
-                    <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 text-slate-400 font-bold italic">01</div>
-                        <p className="text-slate-600 text-sm font-semibold leading-relaxed pt-1">
-                            Adopt a <span className="text-slate-900">clinical mindset</span>. Provide clear, well-lit medical imagery.
-                        </p>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 text-slate-400 font-bold italic">02</div>
-                        <p className="text-slate-600 text-sm font-semibold leading-relaxed pt-1">
-                            Our AI simulates <span className="text-blue-600">specialist reasoning</span> for tertiary level reviews.
-                        </p>
-                    </div>
+            
+            <div className="p-8">
+                <div className="mb-6">
+                    <p className="text-slate-600 text-sm font-medium leading-relaxed">
+                        This is purely for <strong>analyzing medical images</strong>.
+                    </p>
+                    <div className="my-4 h-px bg-slate-100"></div>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                        Use this when a patient provides an <strong>X-Ray, MRI, or Report</strong> for expert AI opinion.
+                    </p>
                 </div>
 
-                <button
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <MicroscopeIcon />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">
+                        Radiologist-Grade Analysis
+                    </p>
+                </div>
+
+                <button 
                     onClick={onDismiss}
-                    className="w-full mt-10 py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-xl shadow-blue-100 transition-all hover:-translate-y-1 active:scale-95 text-sm uppercase tracking-widest"
+                    className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg transition-all"
                 >
-                    Acknowledge & Start
+                    Access Medical Hub
                 </button>
             </div>
         </div>
@@ -166,78 +163,78 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
     }>({ isOpen: false, modality: null, title: '', instruction: '', explanation: '', icon: null, color: '' });
 
     const getServiceDetails = (modality: Modality) => {
-        switch (modality) {
+        switch(modality) {
             case 'XRAY':
                 return {
-                    title: "Radiology Unit",
-                    instruction: "Ensure the X-ray is held against a white light source or captured from a high-resolution display.",
-                    explanation: "Our neural net analyzes lung markings, heart silhouette, and bony structures.",
+                    title: "Chest X-Ray",
+                    instruction: "Upload a clear photo of the physical X-ray film or a digital screen capture. Ensure markers (L/R) are visible.",
+                    explanation: "Detects pneumonia, TB, nodules, fractures, and effusions.",
                     icon: <LungsIcon />,
-                    color: "bg-blue-600 text-white"
+                    color: "bg-blue-50 text-blue-600"
                 };
             case 'MRI':
                 return {
-                    title: "Neuro Imaging",
-                    instruction: "Capture specific MRI sequences (T1/T2). Focus on the area of concern.",
-                    explanation: "Detailed soft-tissue analysis including brain, spine, and musculoskeletal structures.",
+                    title: "MRI Scan",
+                    instruction: "Capture specific MRI sequences (T1/T2). High contrast images work best.",
+                    explanation: "Analyzes soft tissue, brain structures, and spinal alignment.",
                     icon: <BrainIcon />,
-                    color: "bg-purple-600 text-white"
+                    color: "bg-purple-50 text-purple-600"
                 };
             case 'CT':
                 return {
-                    title: "Contrast CT",
-                    instruction: "High contrast images work best. Avoid glare from the screen.",
-                    explanation: "Identifies acute internal trauma, hemorrhage, and tumor morphology.",
+                    title: "CT Scan",
+                    instruction: "Ensure slice is well-lit. Reduce screen brightness to prevent blooming if photographing a monitor.",
+                    explanation: "Identifies hemorrhage, masses, and internal trauma.",
                     icon: <BrainIcon />,
-                    color: "bg-indigo-600 text-white"
+                    color: "bg-indigo-50 text-indigo-600"
                 };
             case 'ECG':
                 return {
-                    title: "Cardiac Lab",
-                    instruction: "Capture the full rhythm strip. Ensure the grid paper is clearly visible.",
-                    explanation: "AI measures cardiac axis, intervals, and rhythmic patterns (AFib/Block).",
+                    title: "ECG / EKG",
+                    instruction: "Align camera parallel to grid. Ensure P, QRS, and T waves are sharp.",
+                    explanation: "Measures intervals to detect AFib, STEMI, and arrhythmias.",
                     icon: <EKGIcon />,
-                    color: "bg-rose-600 text-white"
+                    color: "bg-rose-50 text-rose-600"
                 };
             case 'BLOOD':
                 return {
-                    title: "Hematology Lab",
-                    instruction: "Ensure the entire report is within frame. OCR works best with printed text.",
-                    explanation: "Extracts biomarkers to flag anemia, infection, and metabolic imbalances.",
+                    title: "Lab Report",
+                    instruction: "Photo of printed report or PDF upload. Ensure numbers are legible.",
+                    explanation: "OCRs values to flag abnormal biomarkers.",
                     icon: <DropIcon />,
-                    color: "bg-red-600 text-white"
+                    color: "bg-red-50 text-red-600"
                 };
             case 'DERMA':
                 return {
-                    title: "Dermatology",
-                    instruction: "Uniform lighting, no shadows. Use macro mode for lesion details.",
-                    explanation: "Morphological analysis of skin lesions and inflammatory patterns.",
+                    title: "Skin Scan",
+                    instruction: "Macro photo of lesion. Good lighting is essential.",
+                    explanation: "Assesses ABCDs of melanoma and common rashes.",
                     icon: <MicroscopeIcon />,
-                    color: "bg-amber-500 text-white"
+                    color: "bg-amber-50 text-amber-600"
                 };
             case 'DENTAL':
                 return {
-                    title: "Oral Health",
-                    instruction: "Panoramic or intraoral X-ray needed.",
-                    explanation: "Evaluates endodontic state and periodontal health.",
+                    title: "Dental X-Ray",
+                    instruction: "OPG or Bitewing X-ray needed.",
+                    explanation: "Checks for cavities, bone loss, and impaction.",
                     icon: <ToothIcon />,
-                    color: "bg-teal-600 text-white"
+                    color: "bg-teal-50 text-teal-600"
                 };
             case 'OPHTHAL':
                 return {
-                    title: "Eye Clinic",
-                    instruction: "Retinal imaging or clear external ocular photo.",
-                    explanation: "Screens for diabetic retinopathy, glaucoma signs, and cataracts.",
+                    title: "Eye Scan",
+                    instruction: "Fundus image or external eye photo.",
+                    explanation: "Screens for retinopathy and cataracts.",
                     icon: <EyeIcon />,
-                    color: "bg-cyan-600 text-white"
+                    color: "bg-blue-50 text-blue-600"
                 };
             default:
                 return {
-                    title: "Diagnostic Unit",
-                    instruction: "Ensure the document or anatomy is clearly visible.",
-                    explanation: "Comprehensive clinical diagnostic protocol.",
+                    title: "Medical Analysis",
+                    instruction: "Ensure document or area is visible.",
+                    explanation: "Standard AI diagnostic protocol.",
                     icon: <MicroscopeIcon />,
-                    color: "bg-slate-700 text-white"
+                    color: "bg-slate-50 text-slate-600"
                 };
         }
     };
@@ -262,7 +259,7 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
         <div className="flex flex-col h-full bg-slate-50 relative">
             {showHubIntro && <HubIntroModal onDismiss={() => setShowHubIntro(false)} />}
 
-            <InstructionModal
+            <InstructionModal 
                 isOpen={modalState.isOpen}
                 onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={handleConfirm}
@@ -289,10 +286,11 @@ const MedicalHub: React.FC<MedicalHubProps> = ({ onSelectService, onStartTriage 
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeTab === tab.id
-                                    ? 'bg-slate-900 text-white shadow-md transform scale-105'
+                            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                                activeTab === tab.id 
+                                    ? 'bg-slate-900 text-white shadow-md transform scale-105' 
                                     : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'
-                                }`}
+                            }`}
                         >
                             {tab.label}
                         </button>

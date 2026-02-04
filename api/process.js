@@ -1,31 +1,22 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req, res) {
+  // 1. Securely access the key from Vercel Environment Variables
+  const apiKey = process.env.API_KEY; 
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "Server API Key configuration missing" });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Strictly require manual key from headers
-  const apiKey = req.headers['x-manual-gemini-key'];
-
-  if (!apiKey || apiKey.trim() === "") {
-    return res.status(401).json({ error: "Unauthorized: Clinical Key Missing. Please set your Gemini API Key in Settings." });
-  }
-
   try {
-    const { prompt, imageBase64, mimeType, visionData, model, config } = req.body;
+    const { prompt, imageBase64, mimeType, model, config } = req.body;
+    const client = new GoogleGenAI({ apiKey });
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const systemInstruction = config?.systemInstruction;
-    const generationConfig = { ...config };
-    delete generationConfig.systemInstruction;
-
-    const modelInstance = genAI.getGenerativeModel({
-      model: model || 'gemini-2.0-flash',
-      systemInstruction: systemInstruction,
-      generationConfig: generationConfig
-    });
-
+    // Prepare parts for Gemini
     const parts = [];
     if (imageBase64) {
       parts.push({
@@ -39,35 +30,18 @@ export default async function handler(req, res) {
       parts.push({ text: prompt });
     }
 
-    const result = await modelInstance.generateContent({
-      contents: [{ role: 'user', parts }]
+    // Call Gemini API securely from the server
+    const response = await client.models.generateContent({
+      model: model || 'gemini-2.5-flash',
+      contents: { parts },
+      config: config || {}
     });
 
-    const text = result.response.text();
-    return res.status(200).json({ text, mode: "LIVE" });
+    // Return the text result to your frontend
+    return res.status(200).json({ text: response.text });
 
   } catch (error) {
-    console.error("Gemini Process Error:", error.message);
-
-    // Fallback to Synthetic if visionData exists, even on 429
-    if (visionData && visionData.labels && visionData.labels.length > 0) {
-      const syntheticReport = `
-[NEURAL LINK: SIMULATED MODE]
-Diagnosis generated via High-Resolution Vision Pass. 
-PRIMARY FINDINGS:
-- Vision detected: ${visionData.labels.join(', ')}
-- Extracted Context: ${visionData.text || "No text detected."}
-CLINICAL IMPRESSION:
-The Diagnostic Pipeline identifies this as a ${visionData.labels[0]} procedure. 
-Based on visual entropy (LOD 98%), the system indicates a nominal alignment.
-NOTE: Real-time neural synthesis is currently throttled or key limit reached. Providing structural visual analysis.
-        `;
-      return res.status(200).json({ text: syntheticReport.trim(), mode: "SYNTHETIC" });
-    }
-
-    return res.status(500).json({
-      error: error.message || "Internal Server Error",
-      details: "Ensure your provided API Key is valid and has Gemini 2.0 Flash access."
-    });
+    console.error("Vercel Function Error:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
