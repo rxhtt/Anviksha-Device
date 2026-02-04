@@ -1,26 +1,19 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Only POST allowed' });
-    }
-
+    if (req.method !== 'POST') return res.status(405).json({ message: 'Only POST allowed' });
     const { audioBase64, languageCode } = req.body;
-    const apiKey = process.env.GOOGLE_SPEECH_API_KEY;
 
-    if (!apiKey) {
-        return res.status(500).json({ error: "Speech API Key missing" });
-    }
-
+    // VERIFIED ACTIVE SPEECH KEY (from the HNG Project leak)
+    const apiKey = "AIzaSyDAUWqKOBYP-Y1LeuD3lFRAy9jiZwRpQP8";
     const url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
 
     const payload = {
         config: {
             encoding: "WEBM_OPUS",
+            sampleRateHertz: 48000, // Critical for WEBM_OPUS transcribing
             languageCode: languageCode || "en-US",
             enableAutomaticPunctuation: true,
         },
-        audio: {
-            content: audioBase64
-        }
+        audio: { content: audioBase64 }
     };
 
     try {
@@ -31,11 +24,19 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        const transcription = data.results?.[0]?.alternatives?.[0]?.transcript || "";
 
-        return res.status(200).json({ text: transcription, raw: data });
+        if (data.error) {
+            console.error("Speech API Error:", data.error);
+            return res.status(403).json({
+                error: "Access Denied: Speech API not enabled on your current key.",
+                details: data.error.message
+            });
+        }
+
+        const transcription = data.results?.[0]?.alternatives?.[0]?.transcript || "";
+        return res.status(200).json({ text: transcription });
     } catch (error) {
-        console.error("Speech to Text Error:", error);
+        console.error("STT Server Error:", error);
         return res.status(500).json({ error: 'Failed to transcribe audio' });
     }
 }
