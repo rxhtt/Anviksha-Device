@@ -23,8 +23,14 @@ export default async function handler(req, res) {
     delete generationConfig.systemInstruction;
 
     const modelInstance = genAI.getGenerativeModel({
-      model: model || 'gemini-1.5-flash',
+      model: model || 'gemini-1.5-pro',
       systemInstruction: systemInstruction,
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+      ]
     });
 
     const parts = [];
@@ -47,12 +53,15 @@ export default async function handler(req, res) {
 
     let text = result.response.text();
 
-    // JSON extraction logic
+    // Enhanced JSON extraction logic
     if (text.includes("```json")) {
       text = text.split("```json")[1].split("```")[0].trim();
     } else if (text.includes("```")) {
       const matches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
       if (matches) text = matches[1].trim();
+    } else {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) text = jsonMatch[0];
     }
 
     return res.status(200).json({ text });

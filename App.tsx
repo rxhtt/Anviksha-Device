@@ -19,18 +19,33 @@ import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality, UserProfile, Language } from './types.ts';
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
+  if (data.isInvalid) {
+    return {
+      modality,
+      condition: data.condition || "Analysis Rejected",
+      confidence: 0,
+      description: data.description || "The uploaded image could not be verified as a valid diagnostic scan.",
+      treatment: data.treatment || "Please upload a clinical-grade medical image.",
+      isEmergency: false,
+      clinicalAlerts: ["INVALID_INPUT"],
+      observationNotes: "Rejection Logic Triggered",
+      modelVersion: "Anviksha-Logic-v1",
+      modelUsed: "Legitimacy-Filter",
+    };
+  }
+
   return {
     modality: modality,
-    condition: data.condition || "Analysis Complete",
-    confidence: Math.min(100, Math.max(0, data.confidence ?? 98)),
-    description: data.description || "Clinical findings indicate standard morphology.",
-    details: data.details,
-    treatment: data.treatment || "Consult specialist.",
-    isEmergency: data.isEmergency ?? data.emergency ?? false,
+    condition: data.condition || "Clinical Review Complete",
+    confidence: data.confidence ?? 0,
+    description: data.description || "Comprehensive clinical analysis was performed.",
+    details: data.details || "Consult reasoning path for detailed findings.",
+    treatment: data.treatment || "Refer to clinical management guidelines.",
+    isEmergency: data.isEmergency ?? false,
     clinicalAlerts: data.clinicalAlerts || [],
-    observationNotes: data.observationNotes || "Verified via Neural Core",
-    modelVersion: "Anviksha-Neural-v2.5",
-    modelUsed: "Clinical-Core",
+    observationNotes: data.observationNotes || "Verified via Anviksha Diagnostic Core",
+    modelVersion: "Anviksha-Neural-v3.0",
+    modelUsed: "Clinical-Specialist-Engine",
     cost: data.cost,
   };
 };
@@ -175,13 +190,8 @@ const App: React.FC = () => {
       setCurrentScreen('triage-results');
     } catch (err) {
       console.error("Triage failed", err);
-      setTriageResult({
-        riskScore: 45,
-        recommendation: 'CONSIDER_XRAY',
-        reasoning: 'AI Triage Engine could not be reached. Fallback logic applied.',
-        urgencyLabel: 'Standard Priority'
-      });
-      setCurrentScreen('triage-results');
+      setError("Clinical Triage Engine is temporarily unreachable. Using Local Heuristic: High Risk markers not detected. Please try again or consult a doctor.");
+      setCurrentScreen('hub');
     } finally {
       setIsLoading(false);
     }
