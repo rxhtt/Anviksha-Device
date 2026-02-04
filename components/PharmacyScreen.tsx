@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { ArrowLeftIcon, PillIcon, SearchIcon, CheckCircleIcon, InfoIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
-import type { PharmacyResult, Medicine, UserProfile } from '../types.ts';
+import type { PharmacyResult, Medicine, UserProfile, Language } from '../types.ts';
 
 interface PharmacyScreenProps {
     onBack: () => void;
     aiManager: AIManager;
     profile: UserProfile;
+    language: Language;
 }
 
-const PharmacyScreen: React.FC<PharmacyScreenProps> = ({ onBack, aiManager, profile }) => {
+const PharmacyScreen: React.FC<PharmacyScreenProps> = ({ onBack, aiManager, profile, language }) => {
     const [query, setQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<PharmacyResult | null>(null);
@@ -20,7 +21,7 @@ const PharmacyScreen: React.FC<PharmacyScreenProps> = ({ onBack, aiManager, prof
         setIsLoading(true);
         setResult(null);
         try {
-            const data = await aiManager.getPharmacySuggestions(query, profile);
+            const data = await aiManager.getPharmacySuggestions(query, profile, language);
             setResult(data);
         } catch (error) {
             console.error(error);

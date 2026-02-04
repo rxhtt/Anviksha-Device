@@ -238,11 +238,13 @@ export default class AIManager {
         }
     }
 
-    async getPharmacySuggestions(query, profile) {
+    async getPharmacySuggestions(query, profile, language = 'en') {
         try {
             const profileContext = this.getProfileContext(profile);
             const userPrompt = `The user is asking about medicines for: "${query}". 
             ${profileContext}
+            
+            LANGUAGE: Respond primarily in ${language === 'hi' ? 'Hindi (Romanized)' : 'English'}.
             
             Analyze the query and provide a list of 3 relevant medicines. 
             For each medicine, find a standard brand name and its equivalent Generic version available in India.
