@@ -115,12 +115,14 @@ export default class AIManager {
             LANGUAGE: Respond primarily in ${language === 'hi' ? 'Hindi (Transliterated/Romanized if technical)' : 'English'}.
             
             DIAGNOSTIC FRAMEWORK:
+            0. VALIDATE: First, determine if this is actually a medical ${modality} image. If it is a screenshot of a UI, a random photo, or not a medical scan, return an error in the "condition" field saying "INVALID_IMAGE".
             1. OBSERVE: Describe anatomical landmarks and specific anomalies.
             2. INTERPRET: Evaluate findings against standard clinical guidelines (WHO/ICD-11).
             3. DIFFERENTIATE: Consider clinical mimics.
             4. CONCLUDE: Provide the most likely diagnosis.
             
             CRITICAL CONSTRAINTS:
+            - If the image is NOT a medical scan, set "condition": "INVALID_IMAGE" and "description": "The uploaded image does not appear to be a valid medical scan."
             - Use professional, clinical terminology strictly.
             - Output MUST be valid JSON.
             - Focus on life-saving findings immediately.`;
@@ -129,7 +131,7 @@ export default class AIManager {
             
             SCHEMA REQUIREMENTS:
             {
-                "condition": "Primary Diagnosis (Short, Professional)",
+                "condition": "Primary Diagnosis (Short, Professional) or INVALID_IMAGE",
                 "confidence": Number (0-100),
                 "description": "2-3 sentence clinical summary",
                 "details": "Bullet-point breakdown of morphological findings",
@@ -157,6 +159,20 @@ export default class AIManager {
 
             if (data.text) {
                 const parsed = JSON.parse(data.text);
+
+                if (parsed.condition === "INVALID_IMAGE") {
+                    return {
+                        condition: "Invalid Input Detected",
+                        confidence: 0,
+                        description: "The analysis engine determined that the uploaded file is not a valid medical scan. Please upload a clear X-Ray, MRI, or CT image.",
+                        details: "System rejected non-clinical image data.",
+                        treatment: "Please provide a valid medical scan for processing.",
+                        isEmergency: false,
+                        clinicalAlerts: ["DATA_REJECTION_ERROR"],
+                        observationNotes: "Anviksha Input Validation Shield Active"
+                    };
+                }
+
                 return {
                     ...parsed,
                     clinicalAlerts: parsed.clinicalAlerts || [],
@@ -168,12 +184,15 @@ export default class AIManager {
 
         } catch (error) {
             console.warn("AI Engine unreachable. Running Local Neural Path.");
-            await new Promise(r => setTimeout(r, 2000));
+            // Determine if we should show a fake result or an error
+            // For safety, let's make the fallback clearly a "Simulation/Demo" result
             const result = getRandomResult(MOCK_XRAY_RESULTS);
             return {
                 ...result,
-                clinicalAlerts: result.isEmergency ? ["URGENT INTERVENTION REQUIRED"] : ["Continue monitoring"],
-                observationNotes: "Simulated Clinical Environment (Neural Fallback)"
+                condition: `[SIMULATION] ${result.condition}`,
+                confidence: 85, // Lower confidence for simulation
+                clinicalAlerts: ["RUNNING IN OFFLINE SIMULATION MODE"],
+                observationNotes: "Neural Fallback: No active connection to Clinical Core. Showing simulated baseline data."
             };
         }
     }
