@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const modelInstance = genAI.getGenerativeModel({
-            model: model || 'gemini-1.5-flash',
+            model: model || 'gemini-2.0-flash',
             systemInstruction: persona || "You are a professional medical consultant."
         });
 

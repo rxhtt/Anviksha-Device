@@ -289,7 +289,7 @@ export default class AIManager {
                 body: JSON.stringify({
                     prompt: userPrompt,
                     persona: "You are a Clinical Pharmacist and Generic Medicine Expert. Focus on providing cost-effective generic alternatives available in India.",
-                    model: 'gemini-1.5-flash'
+                    model: 'gemini-2.0-flash'
                 })
             });
 
@@ -317,7 +317,7 @@ export default class AIManager {
                 body: JSON.stringify({
                     prompt: userPrompt,
                     persona: "You are a compassionate Clinical Psychologist. Your goal is to provide emotional support and active listening.",
-                    model: 'gemini-1.5-flash'
+                    model: 'gemini-2.0-flash'
                 })
             });
 

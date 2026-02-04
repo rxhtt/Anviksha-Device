@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.CONSULT_GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: "Server API Key configuration missing" });
+    console.error("Critical: No API Key found in Environment Variables.");
+    return res.status(500).json({ error: "Server API Key configuration missing. Please set CONSULT_GEMINI_API_KEY or GEMINI_API_KEY in Vercel." });
   }
 
   if (req.method !== 'POST') {
