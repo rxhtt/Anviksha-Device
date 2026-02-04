@@ -1,69 +1,97 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const KEY_POOL = [
-  "AIzaSyDzXOdxOJ_FLQGVMXHzfRiXrnBJeog0MLo", // NUCLEAR_KEY_1
-  "AIzaSyA6U7X1YlFlY52zYwSyXhBWJMhgsBNnHqA", // PRO_1
-  "AIzaSyBptLrGSF2MT-IYLXpFD9QqrLUVCZPFic0", // PRO_2
-  "AIzaSyBIgh-9o1Fg1VXz2BrOEk3UFOU0Vpzt4Ug", // PRO_3
-  "AIzaSyCc7YkS2waYRV1aUk3yVjNQdtKMVPu0PUY", // FLASH
-  "AIzaSyAkja0H8ux3g2iw8jd-HJGEZxMMs04jIYk"  // KEY_1
-];
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "API_KEY missing in Environment variables." });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
     const { prompt, imageBase64, mimeType, config } = req.body;
+    const genAI = new GoogleGenerativeAI(apiKey);
     const systemInstruction = config?.systemInstruction || "";
 
     const parts = [];
-    if (systemInstruction) parts.push({ text: `INSTRUCTION: ${systemInstruction}` });
     if (imageBase64) {
       parts.push({
-        inlineData: { data: imageBase64, mimeType: mimeType || "image/jpeg" }
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType || "image/jpeg"
+        }
       });
     }
-    if (prompt) parts.push({ text: prompt });
+    if (prompt) {
+      parts.push({ text: prompt });
+    }
 
-    const modelsToTry = ["gemini-1.5-flash", "gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    // HYPER-RESILIENT BACKEND SWITCHER
+    // Prioritizing the newest model (3.0) for the presentation, 
+    // but cascading to the most stable high-quota version (1.5) immediately if needed.
+    const modelsToTry = [
+      "gemini-3-flash",
+      "gemini-1.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash-8b",
+      "gemini-1.5-pro"
+    ];
 
     let text = "";
     let lastError = null;
 
-    // Use environment key first, then fall back to the pool
-    const primaryKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-    const keysToTry = primaryKey ? [primaryKey, ...KEY_POOL] : KEY_POOL;
+    for (const modelName of modelsToTry) {
+      try {
+        const modelInstance = genAI.getGenerativeModel({ model: modelName });
 
-    for (const key of keysToTry) {
-      const genAI = new GoogleGenerativeAI(key);
-
-      for (const modelName of modelsToTry) {
-        try {
-          const modelInstance = genAI.getGenerativeModel({ model: modelName });
-          const result = await modelInstance.generateContent({
-            contents: [{ role: 'user', parts }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
-          });
-
-          text = result.response.text();
-          if (text) break;
-        } catch (err) {
-          lastError = err;
-          if (err.message.includes("429") || err.message.includes("404") || err.message.includes("quota")) {
-            continue;
+        const result = await modelInstance.generateContent({
+          contents: [{
+            role: 'user',
+            parts: [
+              { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
+              ...parts
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
           }
-          break; // If it's another error (auth), try next key
+        });
+
+        text = result.response.text();
+        if (text) {
+          console.log(`[BACKEND] Success: ${modelName}`);
+          break;
         }
+      } catch (err) {
+        lastError = err;
+        const errStr = err.message?.toLowerCase() || "";
+        const isRetryable = errStr.includes("429") || errStr.includes("quota") || errStr.includes("404") || errStr.includes("not found");
+
+        if (isRetryable) {
+          console.warn(`[BACKEND] Switching from ${modelName} due to: ${errStr.substring(0, 50)}...`);
+          continue;
+        }
+        throw err;
       }
-      if (text) break;
     }
 
-    if (!text) throw lastError || new Error("Neural Link Exhausted.");
+    if (!text) {
+      throw lastError || new Error("All clinical models failed to respond. Check if your API key has any remaining quota.");
+    }
 
-    // Extract JSON
-    if (text.includes("```json")) text = text.split("```json")[1].split("```")[0].trim();
-    else if (text.includes("```")) text = text.split("```")[1].split("```")[0].trim();
-    else {
+    // Enhanced JSON extraction
+    if (text.includes("```json")) {
+      text = text.split("```json")[1].split("```")[0].trim();
+    } else if (text.includes("```")) {
+      const matches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (matches) text = matches[1].trim();
+    } else {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) text = jsonMatch[0];
     }
@@ -71,6 +99,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ text });
 
   } catch (error) {
-    return res.status(500).json({ error: error.message || "Internal Diagnostic Error" });
+    console.error("Gemini API Error:", error);
+    return res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 }

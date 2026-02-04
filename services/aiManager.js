@@ -37,26 +37,10 @@ CRITICAL CLINICAL PROTOCOLS:
 4. JSON STRUCTURE: Ensure all clinical alerts are evidence-based.
 `;
 
-const GEMINI_KEY_POOL = [
-    "AIzaSyDzXOdxOJ_FLQGVMXHzfRiXrnBJeog0MLo", // NUCLEAR_KEY_1
-    "AIzaSyA6U7X1YlFlY52zYwSyXhBWJMhgsBNnHqA", // PRO_1
-    "AIzaSyBptLrGSF2MT-IYLXpFD9QqrLUVCZPFic0", // PRO_2
-    "AIzaSyBIgh-9o1Fg1VXz2BrOEk3UFOU0Vpzt4Ug", // PRO_3
-    "AIzaSyCc7YkS2waYRV1aUk3yVjNQdtKMVPu0PUY", // FLASH
-    "AIzaSyAkja0H8ux3g2iw8jd-HJGEZxMMs04jIYk"  // KEY_1
-];
-
 export default class AIManager {
     constructor() {
         this.history = [];
         this.auditLog = [];
-        this.currentKeyIndex = 0;
-    }
-
-    getNextKey() {
-        const key = GEMINI_KEY_POOL[this.currentKeyIndex];
-        this.currentKeyIndex = (this.currentKeyIndex + 1) % GEMINI_KEY_POOL.length;
-        return key;
     }
 
     getProfileContext(profile) {
@@ -131,50 +115,54 @@ export default class AIManager {
                 const data = await response.json();
                 text = data.text;
             } else {
-                // FALLBACK: DIRECT CLIENT-SIDE CALL (Resilient Multi-Key & Multi-Model Mode)
-                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                // FALLBACK: DIRECT CLIENT-SIDE CALL (Resilient Multi-Model Mode)
+                const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+                if (!apiKey || apiKey === "undefined") {
+                    throw new Error(`CORE_LINK_FAILURE: No API Key detected in environment.`);
+                }
 
-                const modelsToTry = ["gemini-1.5-flash", "gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                const genAI = new GoogleGenerativeAI(apiKey);
+
+                // DIRECT SATELLITE SWITCHER (FRONTEND RESILIENCE)
+                // This chain handles the 'Limit: 0' scenario by aggressively trying every available model alias.
+                const modelsToTry = [
+                    "gemini-3-flash",
+                    "gemini-1.5-flash",
+                    "gemini-1.5-flash-8b",
+                    "gemini-2.0-flash",
+                    "gemini-1.5-pro"
+                ];
                 let lastError = null;
 
-                // Loop through keys in the pool
-                for (let k = 0; k < GEMINI_KEY_POOL.length; k++) {
-                    const apiKey = this.getNextKey();
-                    if (!apiKey) continue;
-
-                    const genAI = new GoogleGenerativeAI(apiKey);
-
-                    // Loop through models for this specific key
-                    for (const modelName of modelsToTry) {
-                        try {
-                            const model = genAI.getGenerativeModel({ model: modelName });
-                            const result = await model.generateContent([
-                                { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
-                                { inlineData: { data: base64, mimeType: file.type } },
-                                { text: userPrompt }
-                            ]);
-                            text = result.response.text();
-                            if (text) {
-                                console.log(`Neural Link established: ${modelName} (Key Link: ${this.currentKeyIndex})`);
-                                break;
-                            }
-                        } catch (err) {
-                            lastError = err;
-                            const isQuota = err.message.includes("429") || err.message.includes("quota");
-                            const isNotFound = err.message.includes("404") || err.message.includes("not found");
-
-                            if (isQuota || isNotFound) {
-                                console.warn(`Rotator: ${modelName} ${isQuota ? 'Quota' : '404'} on Key ${this.currentKeyIndex}, trying next...`);
-                                continue;
-                            }
-                            throw err;
+                for (const modelName of modelsToTry) {
+                    try {
+                        const model = genAI.getGenerativeModel({ model: modelName });
+                        const result = await model.generateContent([
+                            { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
+                            { inlineData: { data: base64, mimeType: file.type } },
+                            { text: userPrompt }
+                        ]);
+                        text = result.response.text();
+                        if (text) {
+                            console.log(`[FRONTEND] Neural Bridge Active: ${modelName}`);
+                            break;
                         }
+                    } catch (err) {
+                        lastError = err;
+                        const errStr = err.message?.toLowerCase() || "";
+                        const isRetryable = errStr.includes("429") || errStr.includes("quota") || errStr.includes("404") || errStr.includes("not found") || errStr.includes("unsupported");
+
+                        if (isRetryable) {
+                            console.warn(`[FRONTEND] ${modelName} Bypass Triggered: ${errStr.substring(0, 50)}...`);
+                            continue;
+                        }
+                        throw err;
                     }
-                    if (text) break;
                 }
 
                 if (!text) {
-                    throw new Error(`CORE_LINK_FAILURE: Neural pool exhausted. Detail: ${lastError?.message}`);
+                    throw new Error(`CORE_FAILURE: All diagnostic nodes (3.0, 1.5, 2.0, 8B) have exceeded their quota. Detail: ${lastError?.message}`);
                 }
 
                 // Clean JSON
