@@ -115,23 +115,46 @@ export default class AIManager {
                 const data = await response.json();
                 text = data.text;
             } else {
-                // FALLBACK: DIRECT CLIENT-SIDE CALL (Necessary for local Vite development or Vercel 413s)
+                // FALLBACK: DIRECT CLIENT-SIDE CALL (Resilient Multi-Model Mode)
                 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
                 if (!apiKey || apiKey === "undefined") {
-                    const statusText = response ? ` (Server Error: ${response.status})` : "";
-                    throw new Error(`CORE_LINK_FAILURE${statusText}`);
+                    throw new Error(`CORE_LINK_FAILURE: No API Key detected in environment.`);
                 }
 
                 const { GoogleGenerativeAI } = await import("@google/generative-ai");
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
-                const result = await model.generateContent([
-                    { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
-                    { inlineData: { data: base64, mimeType: file.type } },
-                    { text: userPrompt }
-                ]);
-                text = result.response.text();
+                // MULTI-MODEL RESILIENCE LOOP
+                // We try different models if the primary one throws a 404
+                const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+                let lastError = null;
+
+                for (const modelName of modelsToTry) {
+                    try {
+                        const model = genAI.getGenerativeModel({ model: modelName });
+                        const result = await model.generateContent([
+                            { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
+                            { inlineData: { data: base64, mimeType: file.type } },
+                            { text: userPrompt }
+                        ]);
+                        text = result.response.text();
+                        if (text) {
+                            console.log(`Successfully connected to clinical model: ${modelName}`);
+                            break;
+                        }
+                    } catch (err) {
+                        lastError = err;
+                        if (err.message.includes("404") || err.message.includes("not found")) {
+                            console.warn(`Model ${modelName} not found, trying next...`);
+                            continue;
+                        }
+                        throw err; // If it's not a 404, it might be an auth error or quota error
+                    }
+                }
+
+                if (!text) {
+                    throw new Error(`CORE_LINK_FAILURE: All diagnostic models returned 404. Detail: ${lastError?.message}`);
+                }
 
                 // Clean JSON
                 if (text.includes("```json")) text = text.split("```json")[1].split("```")[0].trim();
