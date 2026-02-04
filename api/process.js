@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     delete generationConfig.systemInstruction;
 
     const modelInstance = genAI.getGenerativeModel({
-      model: model || 'gemini-1.5-flash',
+      model: model || 'gemini-2.0-flash',
       systemInstruction: systemInstruction,
       generationConfig: generationConfig
     });

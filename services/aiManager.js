@@ -148,7 +148,7 @@ export default class AIManager {
                     prompt: userPrompt,
                     imageBase64: base64,
                     mimeType: file.type,
-                    model: 'gemini-1.5-flash',
+                    model: 'gemini-2.0-flash',
                     config: {
                         responseMimeType: "application/json",
                         systemInstruction: systemInstruction,
