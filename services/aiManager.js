@@ -50,7 +50,7 @@ const MOCK_PHARMACY = {
     ]
 };
 
-const fileToBase64 = async (file) => {
+const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -66,9 +66,27 @@ const fileToBase64 = async (file) => {
 const getRandomResult = (list) => list[Math.floor(Math.random() * list.length)];
 
 export default class AIManager {
-
     constructor() {
         this.history = [];
+    }
+
+    async #safeFetch(url, options) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || `HTTP ${response.status}`;
+
+                if (response.status === 429) {
+                    throw new Error(`Neural Link Capacity Exceeded: ${errorMessage}`);
+                }
+                throw new Error(errorMessage);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("AI Communication Error:", error);
+            throw error;
+        }
     }
 
     getProfileContext(profile) {
@@ -121,14 +139,14 @@ export default class AIManager {
                 "cost": Number (Estimated savings in INR vs private hospital)
             }`;
 
-            const response = await fetch('/api/process', {
+            const data = await this.#safeFetch('/api/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: userPrompt,
                     imageBase64: base64,
                     mimeType: file.type,
-                    model: 'gemini-3.0',
+                    model: 'gemini-1.5-flash',
                     config: {
                         responseMimeType: "application/json",
                         systemInstruction: systemInstruction,
@@ -137,19 +155,16 @@ export default class AIManager {
                 })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.text) {
-                    const parsed = JSON.parse(data.text);
-                    return {
-                        ...parsed,
-                        clinicalAlerts: parsed.clinicalAlerts || [],
-                        observationNotes: `Verified via Anviksha Diagnostic Core for ${profile?.name || 'Guest'}`
-                    };
-                }
+            if (data.text) {
+                const parsed = JSON.parse(data.text);
+                return {
+                    ...parsed,
+                    clinicalAlerts: parsed.clinicalAlerts || [],
+                    observationNotes: `Verified via Anviksha Diagnostic Core for ${profile?.name || 'Guest'}`
+                };
             }
 
-            throw new Error("API call failed");
+            throw new Error("Invalid response format");
 
         } catch (error) {
             console.warn("AI Engine unreachable. Running Local Neural Path.");
@@ -179,7 +194,7 @@ export default class AIManager {
                 "reasoning": "string in ${language === 'hi' ? 'Hindi' : 'English'}"
             }`;
 
-            const response = await fetch('/api/process', {
+            const data = await this.#safeFetch('/api/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -188,11 +203,8 @@ export default class AIManager {
                 })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.text) return JSON.parse(data.text);
-            }
-            throw new Error("Triage API fail");
+            if (data.text) return JSON.parse(data.text);
+            throw new Error("Invalid triage response");
         } catch (e) {
             // Fallback
             let score = 20;
@@ -225,7 +237,7 @@ export default class AIManager {
                 ]
             }`;
 
-            const response = await fetch('/api/process', {
+            const data = await this.#safeFetch('/api/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -234,10 +246,7 @@ export default class AIManager {
                 })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.text) return JSON.parse(data.text);
-            }
+            if (data.text) return JSON.parse(data.text);
             return MOCK_PHARMACY;
         } catch (e) {
             return MOCK_PHARMACY;
@@ -255,7 +264,7 @@ export default class AIManager {
             You are a compassionate Clinical Psychologist. Provide a 2-3 sentence supportive response. 
             No JSON, just plain text.`;
 
-            const response = await fetch('/api/process', {
+            const data = await this.#safeFetch('/api/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -264,10 +273,7 @@ export default class AIManager {
                 })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.text) return data.text;
-            }
+            if (data.text) return data.text;
             return "I'm here to listen. Can you tell me more about what's on your mind?";
         } catch (e) {
             return "I'm here to support you. How are you feeling today?";

@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     delete generationConfig.systemInstruction;
 
     const modelInstance = genAI.getGenerativeModel({
-      model: model || 'gemini-3-flash',
+      model: model || 'gemini-1.5-flash',
       systemInstruction: systemInstruction,
       generationConfig: generationConfig
     });
@@ -50,6 +50,17 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+
+    // Check if it's a quota or rate limit error
+    const errorMessage = error.message || "";
+    if (errorMessage.includes("429") || errorMessage.toLowerCase().includes("quota") || errorMessage.toLowerCase().includes("rate limit")) {
+      return res.status(429).json({
+        error: "Neural Link Capacity Exceeded (Rate Limit).",
+        details: "The high-precision clinical engine is currently under heavy load or quota has been reached. Please wait a moment before trying again.",
+        retryAfter: 60
+      });
+    }
+
+    return res.status(500).json({ error: errorMessage || "Internal Server Error" });
   }
 }
