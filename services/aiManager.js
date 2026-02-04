@@ -125,9 +125,8 @@ export default class AIManager {
                 const genAI = new GoogleGenerativeAI(apiKey);
 
                 // MULTI-MODEL RESILIENCE LOOP
-                // Prioritizing stability (1.5) for the competition, with 3.0/2.0 as options
-                // This loop now handles 429 (Quota) and 404 (Not Found) errors
-                const modelsToTry = ["gemini-1.5-flash", "gemini-3-flash", "gemini-2.0-flash"];
+                // We lead with Gemini 3.0 for the competition, with 1.5 as the stable fallback
+                const modelsToTry = ["gemini-3-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
                 let lastError = null;
 
                 for (const modelName of modelsToTry) {

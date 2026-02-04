@@ -33,8 +33,8 @@ export default async function handler(req, res) {
       parts.push({ text: prompt });
     }
 
-    // MULTI-MODEL BACKEND RESILIENCE: Try multiple models if quota is hit
-    const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-3-flash"];
+    // MULTI-MODEL BACKEND RESILIENCE: Lead with 3.0, fallback to stable models
+    const modelsToTry = ["gemini-3-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
     let text = "";
     let lastError = null;
 
