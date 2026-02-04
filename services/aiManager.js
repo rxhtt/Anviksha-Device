@@ -126,7 +126,10 @@ export default class AIManager {
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({
                     model: "gemini-1.5-flash",
-                    systemInstruction
+                    systemInstruction: {
+                        role: "system",
+                        parts: [{ text: systemInstruction }]
+                    }
                 });
 
                 const result = await model.generateContent([
