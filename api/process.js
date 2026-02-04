@@ -23,9 +23,8 @@ export default async function handler(req, res) {
     delete generationConfig.systemInstruction;
 
     const modelInstance = genAI.getGenerativeModel({
-      model: model || 'gemini-3-flash',
+      model: model || 'gemini-1.5-flash',
       systemInstruction: systemInstruction,
-      generationConfig: generationConfig
     });
 
     const parts = [];
@@ -42,10 +41,20 @@ export default async function handler(req, res) {
     }
 
     const result = await modelInstance.generateContent({
-      contents: [{ role: 'user', parts }]
+      contents: [{ role: 'user', parts }],
+      generationConfig: generationConfig
     });
 
-    const text = result.response.text();
+    let text = result.response.text();
+
+    // JSON extraction logic
+    if (text.includes("```json")) {
+      text = text.split("```json")[1].split("```")[0].trim();
+    } else if (text.includes("```")) {
+      const matches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (matches) text = matches[1].trim();
+    }
+
     return res.status(200).json({ text });
 
   } catch (error) {
