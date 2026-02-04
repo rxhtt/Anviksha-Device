@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: "API_KEY missing in Environment variables." });
+    return res.status(500).json({ error: "API_KEY missing in Environment variables. Please set it in Vercel settings." });
   }
 
   if (req.method !== 'POST') {
@@ -14,14 +14,9 @@ export default async function handler(req, res) {
   try {
     const { prompt, imageBase64, mimeType, config } = req.body;
     const genAI = new GoogleGenerativeAI(apiKey);
-
-    // Use gemini-3-flash (State-of-the-Art Core)
-    const modelInstance = genAI.getGenerativeModel({
-      model: "gemini-3-flash"
-    });
-
     const systemInstruction = config?.systemInstruction || "";
 
+    // Prepare the parts for the prompt
     const parts = [];
     if (systemInstruction) {
       parts.push({ text: `INSTRUCTION: ${systemInstruction}` });
@@ -38,19 +33,47 @@ export default async function handler(req, res) {
       parts.push({ text: prompt });
     }
 
-    const result = await modelInstance.generateContent({
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        temperature: 0.1,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 2048,
+    // MULTI-MODEL BACKEND RESILIENCE: Try multiple models if quota is hit
+    const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-3-flash"];
+    let text = "";
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Backend attempting: ${modelName}`);
+        const modelInstance = genAI.getGenerativeModel({ model: modelName });
+
+        const result = await modelInstance.generateContent({
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            temperature: 0.1,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
+          }
+        });
+
+        text = result.response.text();
+        if (text) {
+          console.log(`Backend succeeded with: ${modelName}`);
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        const isRetryable = err.message.includes("429") || err.message.includes("404") || err.message.includes("quota");
+        if (isRetryable) {
+          console.warn(`Backend Switcher: ${modelName} hit limit or not found, trying next...`);
+          continue;
+        }
+        throw err; // Non-retryable error (auth, etc)
       }
-    });
+    }
 
-    let text = result.response.text();
+    if (!text) {
+      throw lastError || new Error("All clinical models failed to respond. Check if your API key has any remaining quota.");
+    }
 
-    // Enhanced JSON extraction
+    // Enhanced JSON extraction for consistent results
     if (text.includes("```json")) {
       text = text.split("```json")[1].split("```")[0].trim();
     } else if (text.includes("```")) {
@@ -64,7 +87,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ text });
 
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+    console.error("Gemini Backend Error:", error);
+    return res.status(500).json({ error: error.message || "Internal Diagnostic Error" });
   }
 }
