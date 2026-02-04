@@ -1,11 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeftIcon, TherapyIcon, SendIcon, MicIcon, MenuIcon, PlusIcon, MessageIcon, TrashIcon, HomeIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
-
-interface TherapyScreenProps {
-    onBack: () => void;
-    aiManager: AIManager;
-}
 
 interface Message {
     id: string;
@@ -20,11 +16,17 @@ interface TherapySession {
     timestamp: number;
 }
 
+interface TherapyScreenProps {
+    onBack: () => void;
+    aiManager: AIManager;
+}
+
 const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
     const [sessions, setSessions] = useState<TherapySession[]>(() => {
         try {
             const saved = window.localStorage.getItem('anviksha_therapy_sessions');
-            return saved ? JSON.parse(saved) : [];
+            const parsed = saved ? JSON.parse(saved) : [];
+            return Array.isArray(parsed) ? parsed : [];
         } catch (e) { return []; }
     });
 
@@ -46,7 +48,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
             if (sessions.length > 0) {
                 const recent = sessions[0];
                 setCurrentSessionId(recent.id);
-                setMessages(recent.messages);
+                setMessages(Array.isArray(recent.messages) ? recent.messages : []);
             } else {
                 startNewSession();
             }
@@ -78,7 +80,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
         const session = sessions.find(s => s.id === id);
         if (session) {
             setCurrentSessionId(id);
-            setMessages(session.messages);
+            setMessages(Array.isArray(session.messages) ? session.messages : []);
             setIsSidebarOpen(false);
         }
     };
@@ -168,7 +170,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
                 return {
                     ...s,
                     messages: updatedMessages,
-                    title: s.messages.length <= 1 ? (input.slice(0, 25) || "Therapy Session") : s.title
+                    title: (s.messages && s.messages.length <= 1) ? (input.slice(0, 25) || "Therapy Session") : s.title
                 };
             }
             return s;
@@ -179,7 +181,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
 
         try {
             const response = await aiManager.getTherapyResponse(userMsg.text);
-            const aiMsg: Message = { id: (Date.now() + 1).toString(), text: response, sender: 'ai' };
+            const aiMsg: Message = { id: (Date.now() + 1).toString(), text: response || "...", sender: 'ai' };
             const finalMessages = [...updatedMessages, aiMsg];
             setMessages(finalMessages);
             setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: finalMessages } : s));
@@ -266,9 +268,9 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
                      </div>
                 </div>
 
-                <div className="p-2 flex-1 flex flex-col overflow-hidden">
+                <div className="p-2 flex-1 flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto space-y-6 pr-1 mt-2">
-                        {Object.entries(groupedSessions).map(([label, group]) => group.length > 0 && (
+                        {Object.entries(groupedSessions).map(([label, group]) => group && group.length > 0 && (
                             <div key={label}>
                                 <h3 className="text-xs font-bold text-teal-400 uppercase tracking-wider mb-2 px-3 opacity-80">{label}</h3>
                                 <div className="space-y-2">
@@ -312,7 +314,7 @@ const TherapyScreen: React.FC<TherapyScreenProps> = ({ onBack, aiManager }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#f8fafc]">
-                {messages.map((msg) => (
+                {Array.isArray(messages) && messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] px-6 py-4 rounded-3xl text-[15px] leading-relaxed shadow-sm ${
                             msg.sender === 'user' 

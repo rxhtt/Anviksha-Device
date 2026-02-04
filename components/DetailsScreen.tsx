@@ -1,99 +1,75 @@
 
 import React from 'react';
 import { 
-    CheckCircleIcon, LungsIcon, HeartIcon, BrainIcon, MicroscopeIcon, ArrowLeftIcon, TriageIcon, DnaIcon
+    LungsIcon, HeartIcon, ArrowLeftIcon, TriageIcon, DnaIcon, SparklesIcon, MicroscopeIcon
 } from './IconComponents.tsx';
 
 const DetailsScreen: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-slate-50 font-sans">
       
-      <div className="relative h-56 bg-slate-900 rounded-b-[3rem] overflow-hidden mb-6 shrink-0 shadow-2xl shadow-slate-200">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-indigo-900 opacity-90"></div>
-        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
-        <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-blue-500/30 rounded-full blur-3xl"></div>
+      <div className="relative h-64 bg-slate-950 rounded-b-[4rem] overflow-hidden mb-8 shrink-0 shadow-2xl">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80')] bg-cover bg-center opacity-30"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 to-black/90"></div>
         
-        <div className="absolute bottom-0 left-0 w-full p-8">
-            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase tracking-widest mb-3 border border-white/10">
-                AI Healthcare Revolution
-            </span>
-            <h1 className="text-4xl font-bold text-white tracking-tight leading-none mb-2">Anviksha AI</h1>
-            <p className="text-blue-100 text-sm font-medium opacity-90">The Future of Digital Hospitals.</p>
+        <div className="absolute bottom-12 left-8 right-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-[0.3em] mb-4 border border-white/10">
+                <SparklesIcon /> SYSTEM MANIFESTO V3.0
+            </div>
+            <h1 className="text-5xl font-black text-white tracking-tighter leading-none mb-1">Genesis</h1>
+            <p className="text-blue-400 text-sm font-bold opacity-80 uppercase tracking-[0.2em] leading-none">Autonomous Digital Hospital</p>
         </div>
         
-        <button onClick={onBack} className="absolute top-6 left-6 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all z-10">
+        <button onClick={onBack} className="absolute top-8 left-8 w-11 h-11 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 transition-all hover:bg-white/20">
             <ArrowLeftIcon />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-10">
+      <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-12 no-scrollbar">
           
-          <section>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">About the App</h2>
-              <p className="text-slate-600 text-sm leading-relaxed font-medium">
-                  Anviksha AI is a comprehensive <strong>Digital Hospital</strong> offering over 25+ medical specialities. Powered by medically-aligned algorithms and High-Precision Generative models, it brings expert-level diagnostics to your pocket.
+          <section className="space-y-5">
+              <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">The Neural Mission</h2>
+              </div>
+              <p className="text-slate-600 text-[15px] leading-relaxed font-bold">
+                  Anviksha AI is an autonomous clinical infrastructure. We are democratizing world-class diagnostics for regions where specialists are scarce, using the world's most advanced neural reasoning models.
               </p>
-              <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                  <p className="text-xs text-blue-800 font-bold">Innovation and Concept by <br/><span className="text-base text-blue-900">Rohit Bagewadi</span></p>
+              <div className="p-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between">
+                  <div>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Conceptualized By</p>
+                      <p className="text-xl font-black text-blue-600 tracking-tight">Rohit Bagewadi</p>
+                  </div>
+                  <div className="text-slate-100 text-5xl opacity-20"><MicroscopeIcon /></div>
               </div>
           </section>
 
-          <section>
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">25+ Diagnostic Specialities</h3>
-              <div className="space-y-4">
-                  <div className="flex gap-4 items-start">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><LungsIcon /></div>
-                      <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Full Body Radiology</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-5">X-Ray, CT, and MRI analysis for Lungs, Brain, Spine, and Fractures.</p>
-                      </div>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                      <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0"><HeartIcon /></div>
-                      <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Advanced Cardiology</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-5">12-Lead ECG interpretation, Arrhythmia detection, and vascular health check.</p>
-                      </div>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0"><DnaIcon /></div>
-                      <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Lab & Genetic Analysis</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-5">Full blood work analysis (CBC, Metabolic), Urinalysis, and Pathology slides.</p>
-                      </div>
-                  </div>
-                   <div className="flex gap-4 items-start">
-                      <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><MicroscopeIcon /></div>
-                      <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Specialist Care</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-5">Dermatology, Ophthalmology (Eye), Dental, Pediatrics, and Gynecology.</p>
-                      </div>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><TriageIcon /></div>
-                      <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Triage & Wellness</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-5">Symptom checking, Mental Health screening, Diet Plans, and Vaccine tracking.</p>
-                      </div>
-                  </div>
+          <section className="space-y-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-1">Operational Domains</h3>
+              <div className="grid gap-4">
+                  {[
+                    { icon: <LungsIcon />, title: "Imaging Core", desc: "X-Ray, MRI, and CT analysis with micro-detail detection." },
+                    { icon: <HeartIcon />, title: "Vascular Hub", desc: "ECG interpretation and hemodynamic risk mapping." },
+                    { icon: <DnaIcon />, title: "Drug Synthesis", desc: "Molecular mapping for Tier 2/3 Indian pharma markets." },
+                    { icon: <TriageIcon />, title: "Clinical Triage", desc: "Symptom synthesis for rapid risk prioritization." }
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-5 items-center p-6 bg-white rounded-[2rem] border border-slate-50 transition-all hover:shadow-lg hover:border-slate-100">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl shrink-0 shadow-xl">{item.icon}</div>
+                        <div>
+                            <h4 className="font-black text-slate-900 text-[13px] uppercase tracking-tight leading-none mb-1.5">{item.title}</h4>
+                            <p className="text-[11px] text-slate-500 font-bold leading-relaxed">{item.desc}</p>
+                        </div>
+                    </div>
+                  ))}
               </div>
           </section>
 
-           <section className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <CheckCircleIcon /> Clinical Accuracy
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                  Models calibrated against standard medical datasets.
-              </p>
-          </section>
-
-          <div className="pt-4 border-t border-slate-100 text-center">
-               <a href="https://anviksha-ai.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs font-bold hover:underline mb-4 block">
-                   https://anviksha-ai.vercel.app/
+          <div className="pt-8 border-t border-slate-200 text-center">
+               <a href="https://anviksha-ai.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block text-blue-600 text-[11px] font-black tracking-widest uppercase hover:underline mb-6">
+                   Global Core Dashboard →
                </a>
-               <p className="text-[10px] text-slate-400 mt-2">
-                   © 2025 Anviksha AI.
+               <p className="text-[9px] text-slate-300 font-black uppercase tracking-[0.5em] mb-10">
+                   © 2025 GENESIS NEURAL • Bengaluru, India.
                </p>
           </div>
 

@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         console.warn("FDA API inaccessible, falling back to neural analysis"); 
       }
 
-      // STAGE 2 & 3: Neural Synthesis using Gemini 1.5 Flash 8B
+      // STAGE 2 & 3: Neural Synthesis using Gemini 3 Flash
       const synthesisPrompt = `
         SYSTEM: You are a Clinical Pharmacy Intelligence Engine.
         USER_CONTEXT: ${pharmacyContext.userHistory || "General Consultation"}
@@ -55,8 +55,9 @@ export default async function handler(req, res) {
         RETURN STRICT JSON only.
       `;
 
+      // Fix: Updated model to gemini-3-flash-preview
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash-8b',
+        model: 'gemini-3-flash-preview',
         contents: synthesisPrompt,
         config: { responseMimeType: "application/json" }
       });
@@ -67,7 +68,8 @@ export default async function handler(req, res) {
     }
 
     // --- DEFAULT GENERATION (Diagnostic Imaging, Therapy, Chat) ---
-    const selectedModel = useSearch ? 'gemini-1.5-flash-8b' : (model || 'gemini-1.5-flash-8b');
+    // Fix: Updated default models to gemini-3-flash-preview
+    const selectedModel = useSearch ? 'gemini-3-flash-preview' : (model || 'gemini-3-flash-preview');
 
     const parts = [];
     if (imageBase64) {

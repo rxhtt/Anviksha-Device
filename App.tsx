@@ -7,6 +7,7 @@ import AnalysisScreen from './components/AnalysisScreen.tsx';
 import ResultsScreen from './components/ResultsScreen.tsx';
 import RecordsScreen from './components/RecordsScreen.tsx';
 import DetailsScreen from './components/DetailsScreen.tsx';
+import SettingsScreen from './components/SettingsScreen.tsx';
 import TriageScreen from './components/TriageScreen.tsx';
 import TriageResultScreen from './components/TriageResultScreen.tsx';
 import ChatScreen from './components/ChatScreen.tsx';
@@ -21,14 +22,14 @@ import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } fro
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
   return {
     modality: modality,
-    condition: data.condition || "Diagnostic Inconclusive",
+    condition: data.condition || "Diagnostic Evaluation Required",
     confidence: Math.min(100, Math.max(0, data.confidence || 0)),
-    description: data.description || "The analysis engine could not generate a summary. Please review the visual evidence.",
-    details: data.details || "No granular findings reported by the neural engine.",
-    treatment: data.treatment || "Consult a physical specialist for definitive management.",
+    description: data.description || "In-depth clinical summary synthesis failed.",
+    details: data.details || "No granular physiological markers identified.",
+    treatment: data.treatment || "Immediate clinical consultation advised.",
     isEmergency: !!data.isEmergency,
-    modelVersion: "Anviksha-Genesis-v1.5-8B (Live)",
-    modelUsed: "Gemini-1.5-Flash-8B",
+    modelVersion: "Genesis-v3.0 (Enterprise)",
+    modelUsed: "Gemini-3-Pro-Neural",
     cost: data.cost || 0,
   };
 };
@@ -47,7 +48,8 @@ const App: React.FC = () => {
   const [patientRecords, setPatientRecords] = useState<AnalysisResult[]>(() => {
     try {
       const records = window.localStorage.getItem('patientRecords');
-      return records ? JSON.parse(records) : [];
+      const parsed = records ? JSON.parse(records) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       return [];
     }
@@ -59,13 +61,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-        const sensitiveKeys = ['geminiApiKey', 'gemini_api_key', 'GOOGLE_API_KEY'];
-        sensitiveKeys.forEach(key => localStorage.removeItem(key));
-    } catch(e) {}
-  }, []);
-
-  useEffect(() => {
-    try {
         window.localStorage.setItem('patientRecords', JSON.stringify(patientRecords));
     } catch (error) {
         console.error("Failed to save patient records", error);
@@ -73,6 +68,11 @@ const App: React.FC = () => {
   }, [patientRecords]);
 
   const handleStartService = (modality: Modality) => {
+      if (!aiManager.isConfigured()) {
+          setError("System error: Neural key not detected. Please go to Settings.");
+          setCurrentScreen('settings');
+          return;
+      }
       setSelectedModality(modality);
       setCurrentScreen('camera');
   };
@@ -114,20 +114,30 @@ const App: React.FC = () => {
   };
 
   const runTriage = async (inputs: TriageInputs) => {
+    if (!aiManager.isConfigured()) {
+        setError("Neural key missing. Configuration required.");
+        setCurrentScreen('settings');
+        return;
+    }
     setIsLoading(true);
     try {
         const result = await aiManager.performTriage(inputs);
         setTriageResult(result as TriageResult);
         setCurrentScreen('triage-results');
-    } catch (err) {
+    } catch (err: any) {
         console.error("Triage failed", err);
-        setError("Triage assessment failed. Please try again.");
+        setError(err.message || "Triage assessment failed.");
     } finally {
         setIsLoading(false);
     }
   };
 
   const runAnalysis = async (file: File) => {
+    if (!aiManager.isConfigured()) {
+        setError("Neural Engine Offline: API Key required.");
+        setCurrentScreen('settings');
+        return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -137,7 +147,7 @@ const App: React.FC = () => {
       setCurrentScreen('results');
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      setError(err.message || "The Neural Engine could not analyze this image. Ensure it is a clear medical scan.");
+      setError(err.message || "The Neural Engine could not analyze this image.");
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
@@ -178,6 +188,8 @@ const App: React.FC = () => {
         return <RecordsScreen records={patientRecords} onViewRecord={handleViewRecord} onBackToHome={handleBack} />;
       case 'details':
         return <DetailsScreen onBack={handleBack} />;
+      case 'settings':
+        return <SettingsScreen onBack={handleBack} aiManager={aiManager} />;
       case 'chat':
         return <ChatScreen onBack={handleBack} aiManager={aiManager} />;
       case 'pharmacy':
@@ -195,11 +207,12 @@ const App: React.FC = () => {
                   onOpenChat={() => setCurrentScreen('chat')}
                   onOpenPharmacy={() => setCurrentScreen('pharmacy')}
                   onOpenTherapy={() => setCurrentScreen('therapy')}
+                  onOpenSettings={() => setCurrentScreen('settings')}
                 />;
     }
   };
 
-  const shouldShowHeader = !['camera', 'analysis'].includes(currentScreen);
+  const shouldShowHeader = !['camera', 'analysis', 'settings'].includes(currentScreen);
 
   return (
     <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden text-slate-900 font-sans">

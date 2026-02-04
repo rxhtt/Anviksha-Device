@@ -1,6 +1,6 @@
 {
   "name": "Anviksha AI",
-  "description": "A progressive web app for clinic kiosks that uses AI to provide instant analysis of chest X-rays for tuberculosis and pneumonia screening.",
+  "description": "Genesis Neural Operating System for autonomous clinic diagnostics.",
   "requestFramePermissions": [
     "camera",
     "microphone"

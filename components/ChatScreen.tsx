@@ -13,7 +13,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
       try {
           const saved = window.localStorage.getItem('anviksha_chat_sessions');
-          return saved ? JSON.parse(saved) : [];
+          const parsed = saved ? JSON.parse(saved) : [];
+          return Array.isArray(parsed) ? parsed : [];
       } catch (e) { return []; }
   });
   
@@ -38,7 +39,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           if (sessions.length > 0) {
               const recent = sessions[0];
               setCurrentSessionId(recent.id);
-              setMessages(recent.messages);
+              setMessages(Array.isArray(recent.messages) ? recent.messages : []);
           } else {
               startNewChat();
           }
@@ -75,7 +76,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
       const session = sessions.find(s => s.id === id);
       if (session) {
           setCurrentSessionId(id);
-          setMessages(session.messages);
+          setMessages(Array.isArray(session.messages) ? session.messages : []);
           setIsSidebarOpen(false);
       }
   };
@@ -183,7 +184,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
               return {
                   ...s,
                   messages: updatedMessages,
-                  title: s.messages.length <= 1 ? (inputText.slice(0, 25) || "Image Analysis") : s.title
+                  title: (s.messages && s.messages.length <= 1) ? (inputText.slice(0, 25) || "Image Analysis") : s.title
               };
           }
           return s;
@@ -199,7 +200,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
           const aiMsg: ChatMessage = {
               id: (Date.now() + 1).toString(),
               role: 'ai',
-              text: responseText,
+              text: responseText || "No response received from Neural Core.",
               timestamp: Date.now()
           };
           
@@ -214,7 +215,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
               text: "Connection error. Please verify internet status.",
               timestamp: Date.now()
           };
-          setMessages(prev => [...prev, errorMsg]);
+          setMessages(prev => [...updatedMessages, errorMsg]);
       } finally {
           setIsLoading(false);
       }
@@ -291,7 +292,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
 
           <div className="p-2 flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto pr-1 space-y-6 mt-2">
-                  {Object.entries(groupSessions()).map(([label, group]) => group.length > 0 && (
+                  {Object.entries(groupSessions()).map(([label, group]) => group && group.length > 0 && (
                       <div key={label}>
                           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">{label}</h3>
                           <div className="space-y-1">
@@ -363,7 +364,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onBack, aiManager }) => {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
-          {messages.map((msg) => (
+          {Array.isArray(messages) && messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 shadow-sm ${
                       msg.role === 'user' 

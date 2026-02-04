@@ -39,6 +39,24 @@ export interface TriageResult {
   urgencyLabel: string;
 }
 
+export interface Medicine {
+    name: string;
+    genericName: string;
+    dosageSchedule: string; // e.g. "1-0-1"
+    timing: string; // e.g. "After food"
+    duration: string; // e.g. "5 days"
+    genericPrice: number;
+    laymanExplanation: string;
+    expertNote: string;
+    contraindications: string;
+    marketAvailability: string; // Information on Tier 2/3 availability in India
+}
+
+export interface PharmacyResult {
+    diagnosisSummary: string;
+    medicines: Medicine[];
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'ai';
@@ -47,30 +65,9 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-/**
- * Interface representing a collection of chat messages with associated metadata.
- * Fix: Added missing ChatSession interface to resolve module error in ChatScreen.tsx.
- */
 export interface ChatSession {
   id: string;
   title: string;
   messages: ChatMessage[];
   timestamp: number;
-}
-
-export interface Medicine {
-    name: string;
-    genericName: string;
-    type: string;
-    dosage: string;
-    priceTier: 'Budget' | 'Premium' | 'Specialized';
-    genericPrice: number;
-    compatibilityScore: number;
-    contraindications: string;
-    explanation: string;
-}
-
-export interface PharmacyResult {
-    diagnosis: string;
-    medicines: Medicine[];
 }

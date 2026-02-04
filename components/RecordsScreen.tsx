@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { AnalysisResult } from '../types.ts';
 import { RecordsIcon, SearchIcon } from './IconComponents.tsx';
@@ -39,7 +40,9 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ records, onViewRecord, on
     const [sortOption, setSortOption] = useState<SortOption>('date_desc');
 
     const filteredAndSortedRecords = useMemo(() => {
-        let result = records.filter(record => {
+        const safeRecords = Array.isArray(records) ? records : [];
+        let result = safeRecords.filter(record => {
+            if (!record) return false;
             const query = searchQuery.toLowerCase();
             return (
                 record.condition.toLowerCase().includes(query) ||
