@@ -90,6 +90,12 @@ export default class AIManager {
 
             let response;
             try {
+                // PAYLOAD SIZE CHECK: Vercel limits is ~4.5MB. Base64 is ~1.37x original.
+                const estimateSize = base64.length * 0.75;
+                if (estimateSize > 4 * 1024 * 1024) {
+                    throw new Error("IMAGE_TOO_LARGE_CLIENT");
+                }
+
                 response = await fetch('/api/process', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -97,11 +103,11 @@ export default class AIManager {
                         prompt: userPrompt,
                         imageBase64: base64,
                         mimeType: file.type,
-                        config: { systemInstruction, temperature: 0.05 }
+                        config: { systemInstruction, temperature: 0.1 }
                     })
                 });
             } catch (e) {
-                console.warn("Vercel API unreacheable, attempting Direct Satellite Link...");
+                console.warn("Vercel API call failed, attempting Direct Satellite Link...", e);
             }
 
             let text;
@@ -109,15 +115,17 @@ export default class AIManager {
                 const data = await response.json();
                 text = data.text;
             } else {
-                // FALLBACK: DIRECT CLIENT-SIDE CALL (Necessary for local Vite development)
-                // This ensures the judge's demo never fails even if Vercel functions are cold
-                const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-                if (!apiKey) throw new Error("NO_API_KEY_FOUND");
+                // FALLBACK: DIRECT CLIENT-SIDE CALL (Necessary for local Vite development or Vercel 413s)
+                const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+                if (!apiKey || apiKey === "undefined") {
+                    const statusText = response ? ` (Server Error: ${response.status})` : "";
+                    throw new Error(`CORE_LINK_FAILURE${statusText}`);
+                }
 
                 const { GoogleGenerativeAI } = await import("@google/generative-ai");
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-1.5-flash", // Use flash for speed in direct calls
+                    model: "gemini-1.5-flash",
                     systemInstruction
                 });
 
@@ -130,6 +138,10 @@ export default class AIManager {
                 // Clean JSON
                 if (text.includes("```json")) text = text.split("```json")[1].split("```")[0].trim();
                 else if (text.includes("```")) text = text.split("```")[1].split("```")[0].trim();
+                else {
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) text = jsonMatch[0];
+                }
             }
 
             const result = JSON.parse(text);
@@ -153,7 +165,7 @@ export default class AIManager {
 
         } catch (error) {
             console.error("Clinical Engine Error:", error);
-            return this.getLocalFallback(modality);
+            return this.getLocalFallback(modality, error.message);
         }
     }
 
@@ -280,11 +292,11 @@ export default class AIManager {
         });
     }
 
-    getLocalFallback(modality) {
+    getLocalFallback(modality, errorMessage = "") {
         return {
-            condition: "CLINICAL_CORE_DISCONNECTED",
-            description: "Anviksha Neural Core is currently performing an automated recalibration. Real-time analysis is temporarily paused.",
-            treatment: "Sync pending. Please re-upload when connectivity is stable.",
+            condition: "CLINICAL_CORE_OFFLINE",
+            description: `Anviksha Neural Core Link Failure: ${errorMessage || 'Unknown Error'}.`,
+            treatment: "Manual Override: Check your internet connection or verify your API key settings in Vercel. Ensure images are below 4MB.",
             isEmergency: false
         };
     }
