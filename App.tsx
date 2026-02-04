@@ -195,9 +195,9 @@ const App: React.FC = () => {
       const normalizedData = normalizeAiResult(rawResult, selectedModality);
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Analysis failed:", err);
-      setError("Clinical pipeline interrupted. Please verify connectivity.");
+      setError(err.message || "Clinical pipeline interrupted. Please verify connectivity.");
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);

@@ -183,17 +183,17 @@ export default class AIManager {
             throw new Error("Invalid response format");
 
         } catch (error) {
-            console.warn("AI Engine unreachable. Running Local Neural Path.");
-            // Determine if we should show a fake result or an error
-            // For safety, let's make the fallback clearly a "Simulation/Demo" result
-            const result = getRandomResult(MOCK_XRAY_RESULTS);
-            return {
-                ...result,
-                condition: `[SIMULATION] ${result.condition}`,
-                confidence: 85, // Lower confidence for simulation
-                clinicalAlerts: ["RUNNING IN OFFLINE SIMULATION MODE"],
-                observationNotes: "Neural Fallback: No active connection to Clinical Core. Showing simulated baseline data."
-            };
+            console.error("AI Engine Error:", error);
+
+            // Only fallback to simulation if explicitly running in a demo environment or if it's a connection failure
+            // But for debugging, let's let the user see the error.
+            if (error.message && (error.message.includes("Neural Link Capacity") || error.message.includes("429"))) {
+                throw error; // Let the UI handle the rate limit error
+            }
+
+            // If we are here, it's either a network error or a code error.
+            // Let's provide a more descriptive error instead of just a simulation.
+            throw new Error(`Clinical Core Connection Failed: ${error.message}. Ensure GEMINI_API_KEY is set in your environment.`);
         }
     }
 
