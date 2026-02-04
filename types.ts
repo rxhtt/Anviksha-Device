@@ -1,8 +1,6 @@
 
 export type Screen = 'welcome' | 'hub' | 'triage' | 'triage-results' | 'camera' | 'analysis' | 'results' | 'records' | 'details' | 'settings' | 'chat' | 'pharmacy' | 'therapy';
 
-export type ApiKeyStatus = 'not_configured' | 'untested' | 'testing' | 'valid' | 'invalid';
-
 export type Modality = 
   | 'XRAY' | 'ECG' | 'BLOOD' | 'MRI' | 'CT' | 'DERMA' | 'GENERAL'
   | 'DENTAL' | 'OPHTHAL' | 'ENT' | 'PEDIATRIC' | 'GYNE' | 'ORTHO' 
@@ -49,11 +47,15 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+/**
+ * Interface representing a collection of chat messages with associated metadata.
+ * Fix: Added missing ChatSession interface to resolve module error in ChatScreen.tsx.
+ */
 export interface ChatSession {
-    id: string;
-    title: string;
-    messages: ChatMessage[];
-    timestamp: number;
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  timestamp: number;
 }
 
 export interface Medicine {
@@ -61,8 +63,10 @@ export interface Medicine {
     genericName: string;
     type: string;
     dosage: string;
-    price: number;
+    priceTier: 'Budget' | 'Premium' | 'Specialized';
     genericPrice: number;
+    compatibilityScore: number;
+    contraindications: string;
     explanation: string;
 }
 

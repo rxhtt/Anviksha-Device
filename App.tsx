@@ -21,21 +21,20 @@ import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } fro
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
   return {
     modality: modality,
-    condition: data.condition || "Analysis Complete",
-    confidence: Math.min(100, Math.max(0, data.confidence ?? 98)),
-    description: data.description || "Clinical findings indicate standard morphology.",
-    details: data.details,
-    treatment: data.treatment || "Consult specialist.",
-    isEmergency: data.isEmergency ?? data.emergency ?? false,
-    modelVersion: "Anviksha-Genesis-v1 (Stable)",
-    modelUsed: "Clinical-Core-Genesis",
-    cost: data.cost,
+    condition: data.condition || "Diagnostic Inconclusive",
+    confidence: Math.min(100, Math.max(0, data.confidence || 0)),
+    description: data.description || "The analysis engine could not generate a summary. Please review the visual evidence.",
+    details: data.details || "No granular findings reported by the neural engine.",
+    treatment: data.treatment || "Consult a physical specialist for definitive management.",
+    isEmergency: !!data.isEmergency,
+    modelVersion: "Anviksha-Genesis-v3.0 (Live)",
+    modelUsed: "Gemini-3-Neural-Core",
+    cost: data.cost || 0,
   };
 };
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
-  // Compliance State: Tracks if user has acknowledged the "Prototype" status
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [selectedModality, setSelectedModality] = useState<Modality>('XRAY');
@@ -58,21 +57,11 @@ const App: React.FC = () => {
   
   const aiManager = useMemo(() => new AIManager(), []);
 
-  // SECURITY: Wipe sensitive keys on load (Park Bench Defense)
   useEffect(() => {
     try {
-        const sensitiveKeys = [
-            'geminiApiKey', 
-            'gemini_api_key', 
-            'GOOGLE_API_KEY', 
-            'REACT_APP_GEMINI_KEY'
-        ];
+        const sensitiveKeys = ['geminiApiKey', 'gemini_api_key', 'GOOGLE_API_KEY'];
         sensitiveKeys.forEach(key => localStorage.removeItem(key));
-        
-        if (window.location.search.includes('key=')) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    } catch(e) { /* Silent fail */ }
+    } catch(e) {}
   }, []);
 
   useEffect(() => {
@@ -128,18 +117,11 @@ const App: React.FC = () => {
     setIsLoading(true);
     try {
         const result = await aiManager.performTriage(inputs);
-        // Explicit cast to ensure type safety
         setTriageResult(result as TriageResult);
         setCurrentScreen('triage-results');
     } catch (err) {
         console.error("Triage failed", err);
-        setTriageResult({
-             riskScore: 45,
-             recommendation: 'CONSIDER_XRAY',
-             reasoning: 'Symptoms suggest mild respiratory infection. Monitor closely.',
-             urgencyLabel: 'Moderate Priority'
-        } as TriageResult);
-        setCurrentScreen('triage-results');
+        setError("Triage assessment failed. Please try again.");
     } finally {
         setIsLoading(false);
     }
@@ -153,9 +135,9 @@ const App: React.FC = () => {
       const normalizedData = normalizeAiResult(rawResult, selectedModality);
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Analysis failed:", err);
-      setError("Analysis failed. Please try again.");
+      setError(err.message || "The Neural Engine could not analyze this image. Ensure it is a clear medical scan.");
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
@@ -222,12 +204,9 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden text-slate-900 font-sans">
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-      
-      {/* STRATEGIC DEFENSE: Mandatory Prototype Agreement Modal */}
       {!showSplash && !hasAcceptedTerms && (
           <DisclaimerModal onAccept={() => setHasAcceptedTerms(true)} />
       )}
-      
       {shouldShowHeader && (
           <Header 
             isOnline={true} 
@@ -235,11 +214,9 @@ const App: React.FC = () => {
             onBack={handleBack}
           />
       )}
-
       <main className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0 overflow-y-auto scroll-smooth">
-            {/* Blur application until terms are accepted to show 'Gated' access */}
-            {(!showSplash) && (
+            {!showSplash && (
                 <div className={!hasAcceptedTerms ? 'blur-md pointer-events-none h-full transition-all duration-500' : 'h-full'}>
                     {renderScreen()}
                 </div>

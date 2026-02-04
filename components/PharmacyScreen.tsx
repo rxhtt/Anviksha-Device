@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeftIcon, PillIcon, SearchIcon, CheckCircleIcon, InfoIcon, AlertIcon } from './IconComponents.tsx';
+import { ArrowLeftIcon, PillIcon, SearchIcon, CheckCircleIcon, InfoIcon, AlertIcon, SparklesIcon } from './IconComponents.tsx';
 import AIManager from '../services/aiManager.js';
 import type { PharmacyResult, Medicine } from '../types.ts';
 
@@ -11,157 +11,159 @@ interface PharmacyScreenProps {
 
 const PharmacyScreen: React.FC<PharmacyScreenProps> = ({ onBack, aiManager }) => {
     const [query, setQuery] = useState('');
+    const [history, setHistory] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<PharmacyResult | null>(null);
-    const [sortOrder, setSortOrder] = useState<'cheap' | 'costly'>('cheap');
 
     const handleSearch = async () => {
         if (!query.trim()) return;
         setIsLoading(true);
         setResult(null);
         try {
-            const data = await aiManager.getPharmacySuggestions(query);
+            const data = await aiManager.getPharmacySuggestions(query, history);
             setResult(data);
         } catch (error) {
-            alert("Failed to fetch medicines. Please check connection.");
+            alert("Neural Synthesis Error. Verify API keys.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const getSortedMedicines = () => {
-        if (!result) return [];
-        return [...result.medicines].sort((a, b) => {
-            return sortOrder === 'cheap' 
-                ? a.genericPrice - b.genericPrice 
-                : b.genericPrice - a.genericPrice;
-        });
+    const getTierColor = (tier: string) => {
+        switch(tier) {
+            case 'Budget': return 'bg-emerald-100 text-emerald-700';
+            case 'Premium': return 'bg-blue-100 text-blue-700';
+            case 'Specialized': return 'bg-purple-100 text-purple-700';
+            default: return 'bg-slate-100 text-slate-700';
+        }
     };
 
     return (
         <div className="flex flex-col h-full bg-slate-50">
             
-            {/* STRATEGIC DEFENSE: COMPLIANCE BANNER */}
-            <div className="bg-amber-100 text-amber-900 px-4 py-2 flex items-center gap-3 justify-center shrink-0 border-b border-amber-200">
-                <div className="text-amber-600 animate-pulse"><AlertIcon /></div>
+            <div className="bg-slate-900 text-white px-4 py-2 flex items-center gap-3 justify-center shrink-0 border-b border-slate-800">
+                <div className="text-blue-400 animate-pulse"><SparklesIcon /></div>
                 <div className="leading-tight">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Genesis Database Mode</p>
-                    <p className="text-[10px] font-medium">Pricing and mapping data is simulated for demonstration.</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Anviksha Neural Pharmacy</p>
+                    <p className="text-[10px] font-medium text-slate-500">3-Stage Synthesis: OpenFDA • Neural Synthesis • Market Logic</p>
                 </div>
             </div>
 
-            <div className="px-4 py-4 bg-teal-800 text-white rounded-b-[2.5rem] shadow-lg shrink-0 z-10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+            <div className="px-4 py-6 bg-teal-900 text-white rounded-b-[2.5rem] shadow-xl shrink-0 z-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-teal-700 rounded-full blur-3xl opacity-40 -mr-16 -mt-16"></div>
                 
                 <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                        <button onClick={onBack} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors backdrop-blur-md">
+                    <div className="flex items-center justify-between mb-6">
+                        <button onClick={onBack} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors backdrop-blur-md border border-white/10">
                             <ArrowLeftIcon />
                         </button>
-                        <h1 className="text-xl font-bold tracking-tight">Pharmacy Database</h1>
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md">
+                        <h1 className="text-xl font-black tracking-tight uppercase">Pharmacy Pipeline</h1>
+                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/10">
                             <PillIcon />
                         </div>
                     </div>
-                    
-                    <p className="text-teal-200 text-xs font-bold uppercase tracking-wide mb-4 px-1">
-                        Generic Equivalency Engine (Concept)
-                    </p>
 
-                    <div className="relative">
-                        <input 
-                            type="text" 
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            placeholder="Enter condition (e.g., Fever)..."
-                            className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white text-slate-900 placeholder-slate-400 font-medium shadow-xl shadow-teal-900/20 focus:outline-none focus:ring-4 focus:ring-teal-500/30 transition-all"
-                        />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                            <SearchIcon />
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Condition (e.g. Chronic Cough)..."
+                                className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white text-slate-900 placeholder-slate-400 font-bold shadow-xl focus:outline-none focus:ring-4 focus:ring-teal-500/30 transition-all"
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
                         </div>
+                        
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value={history}
+                                onChange={(e) => setHistory(e.target.value)}
+                                placeholder="Medical History (e.g. Allergic to Sulfa)..."
+                                className="w-full h-12 pl-4 pr-4 rounded-xl bg-teal-800/50 border border-white/10 text-white placeholder-teal-300/50 text-xs font-medium focus:outline-none focus:bg-teal-800 transition-all"
+                            />
+                        </div>
+
                         <button 
                             onClick={handleSearch}
-                            className="absolute right-2 top-2 bottom-2 px-4 bg-teal-900 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors shadow-lg"
+                            disabled={isLoading}
+                            className="w-full h-14 bg-white text-teal-900 rounded-2xl font-black text-sm hover:bg-teal-50 transition-all shadow-xl shadow-teal-950/20 active:scale-95 disabled:opacity-50"
                         >
-                            {isLoading ? 'Searching...' : 'Query DB'}
+                            {isLoading ? 'EXECUTING SYNTHESIS...' : 'RUN NEURAL ANALYSIS'}
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 pb-12">
                 {isLoading && (
-                    <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                        <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
-                        <p className="text-slate-400 text-sm font-medium">Querying Mock Database...</p>
+                    <div className="flex flex-col items-center justify-center h-64 space-y-6">
+                        <div className="relative">
+                            <div className="w-16 h-16 border-4 border-teal-100 border-t-teal-600 rounded-full animate-spin"></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-teal-600"><SparklesIcon /></div>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Processing Pipeline</p>
+                            <p className="text-slate-600 text-sm font-bold">Querying OpenFDA & Researching Market Pricing...</p>
+                        </div>
                     </div>
                 )}
 
                 {!isLoading && !result && (
-                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 opacity-60">
-                        <div className="text-5xl mb-2"><PillIcon /></div>
-                        <p className="text-sm">Enter symptoms to simulate generic matching.</p>
+                    <div className="flex flex-col items-center justify-center h-64 text-slate-300">
+                        <div className="text-6xl mb-4 opacity-20"><PillIcon /></div>
+                        <p className="text-sm font-bold uppercase tracking-widest opacity-50">Awaiting Synthesis Query</p>
                     </div>
                 )}
 
                 {result && (
-                    <div className="space-y-6 animate-slideUpFade">
-                        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">AI Analysis</h3>
-                            <p className="text-slate-800 font-medium leading-relaxed">
+                    <div className="space-y-6 animate-slideUp">
+                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                             <div className="absolute top-0 right-0 p-4 text-emerald-500 opacity-10 scale-150"><CheckCircleIcon /></div>
+                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Neural Synthesis Result</h3>
+                             <p className="text-slate-900 font-bold leading-relaxed text-sm">
                                 {result.diagnosis}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-slate-900">Results</h3>
-                            <div className="flex bg-slate-200 rounded-lg p-1">
-                                <button 
-                                    onClick={() => setSortOrder('cheap')}
-                                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${sortOrder === 'cheap' ? 'bg-white shadow-sm text-teal-700' : 'text-slate-500'}`}
-                                >
-                                    Low Price
-                                </button>
-                                <button 
-                                    onClick={() => setSortOrder('costly')}
-                                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${sortOrder === 'costly' ? 'bg-white shadow-sm text-teal-700' : 'text-slate-500'}`}
-                                >
-                                    High Price
-                                </button>
-                            </div>
+                             </p>
                         </div>
 
                         <div className="space-y-4">
-                            {getSortedMedicines().map((med, index) => (
-                                <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 group hover:shadow-md transition-all">
-                                    <div className="bg-slate-50 px-4 py-2 flex justify-between items-center border-b border-slate-100">
-                                        <span className="text-[10px] font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded uppercase tracking-wide">
-                                            {med.type}
-                                        </span>
-                                        <span className="text-xs font-bold text-slate-500">{med.dosage}</span>
+                            {result.medicines.map((med, index) => (
+                                <div key={index} className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 group">
+                                    <div className="bg-slate-50 px-5 py-3 flex justify-between items-center border-b border-slate-100">
+                                        <div className="flex gap-2">
+                                            <span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter ${getTierColor(med.priceTier)}`}>
+                                                {med.priceTier} Tier
+                                            </span>
+                                            <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase">
+                                                Safety: {med.compatibilityScore}%
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase">{med.type}</span>
                                     </div>
                                     
-                                    <div className="p-4">
-                                        <div className="flex justify-between items-start mb-3">
+                                    <div className="p-5">
+                                        <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <h4 className="text-lg font-bold text-slate-900">{med.name}</h4>
-                                                <p className="text-xs text-slate-400 font-medium">Brand Price: ₹{med.price}</p>
+                                                <h4 className="text-lg font-black text-slate-900">{med.name}</h4>
+                                                <p className="text-xs text-slate-500 font-bold">{med.genericName}</p>
                                             </div>
                                             <div className="text-right">
-                                                <div className="text-xl font-black text-teal-600">₹{med.genericPrice}</div>
-                                                <div className="text-[10px] font-bold text-teal-600 uppercase">Generic Price</div>
+                                                <div className="text-2xl font-black text-slate-900">₹{med.genericPrice}</div>
+                                                <div className="text-[10px] font-black text-slate-400 uppercase">Est. Market Price</div>
                                             </div>
                                         </div>
                                         
-                                        <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-3">
-                                            <p className="text-xs text-slate-600">
-                                                <span className="font-bold text-slate-800 block mb-1">Generic Name (Salt):</span> 
-                                                {med.genericName}
-                                            </p>
-                                        </div>
+                                        {med.contraindications && (
+                                            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4 flex gap-3">
+                                                <div className="text-red-600 shrink-0"><AlertIcon /></div>
+                                                <div className="text-[11px] text-red-800 font-bold leading-tight">
+                                                    CONTRAINDICATION: {med.contraindications}
+                                                </div>
+                                            </div>
+                                        )}
                                         
-                                        <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-50 pt-2">
+                                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
                                             {med.explanation}
                                         </p>
                                     </div>
@@ -169,10 +171,10 @@ const PharmacyScreen: React.FC<PharmacyScreenProps> = ({ onBack, aiManager }) =>
                             ))}
                         </div>
                         
-                        <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex gap-3 items-start">
-                            <div className="text-red-600 mt-0.5"><AlertIcon /></div>
-                            <p className="text-xs text-red-800 leading-relaxed font-bold">
-                                DISCLAIMER: Clinical Validation Pending. Do not use for treatment.
+                        <div className="bg-slate-900 text-white p-6 rounded-[2.5rem] flex gap-4 items-center">
+                            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl shrink-0"><InfoIcon /></div>
+                            <p className="text-[11px] font-bold leading-relaxed opacity-80">
+                                This analysis uses OpenFDA clinical data synthesized with real-time market research. Always consult a physical pharmacist before purchase.
                             </p>
                         </div>
                     </div>
