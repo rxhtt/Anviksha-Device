@@ -124,15 +124,10 @@ export default class AIManager {
 
                 const { GoogleGenerativeAI } = await import("@google/generative-ai");
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({
-                    model: "gemini-1.5-flash",
-                    systemInstruction: {
-                        role: "system",
-                        parts: [{ text: systemInstruction }]
-                    }
-                });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
                 const result = await model.generateContent([
+                    { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
                     { inlineData: { data: base64, mimeType: file.type } },
                     { text: userPrompt }
                 ]);

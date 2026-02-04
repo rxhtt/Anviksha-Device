@@ -23,11 +23,7 @@ export default async function handler(req, res) {
     delete generationConfig.systemInstruction;
 
     const modelInstance = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: {
-        role: "system",
-        parts: [{ text: systemInstruction }]
-      },
+      model: "gemini-1.5-flash-latest",
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -50,7 +46,13 @@ export default async function handler(req, res) {
     }
 
     const result = await modelInstance.generateContent({
-      contents: [{ role: 'user', parts }],
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: `SYSTEM_INSTRUCTION: ${systemInstruction}` },
+          ...parts
+        ]
+      }],
       generationConfig: generationConfig
     });
 
