@@ -41,7 +41,7 @@ export default class AIManager {
                     prompt,
                     imageBase64: base64,
                     mimeType: file.type,
-                    model: 'gemini-3-flash-preview', 
+                    model: 'gemini-1.5-flash-8b', 
                     config: { responseMimeType: "application/json", systemInstruction }
                 })
             });
@@ -90,7 +90,7 @@ export default class AIManager {
                     prompt: text,
                     imageBase64: base64,
                     mimeType: imageFile?.type,
-                    model: 'gemini-3-pro-preview',
+                    model: 'gemini-1.5-flash-8b',
                     useSearch: true,
                     config: { 
                         systemInstruction: "You are the Genesis Assistant. You are a highly professional medical assistant capable of diagnosing based on images and providing up-to-date health information using real-time search." 
@@ -114,7 +114,7 @@ export default class AIManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: userText,
-                    model: 'gemini-3-pro-preview',
+                    model: 'gemini-1.5-flash-8b',
                     config: { 
                         systemInstruction: "You are Dr. Anviksha, a compassionate, empathetic therapist specializing in medical anxiety and wellness. Use short, helpful responses." 
                     }
@@ -138,7 +138,7 @@ export default class AIManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt,
-                    model: 'gemini-3-flash-preview',
+                    model: 'gemini-1.5-flash-8b',
                     config: { responseMimeType: "application/json" }
                 })
             });

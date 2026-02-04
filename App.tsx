@@ -27,8 +27,8 @@ const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 
     details: data.details || "No granular findings reported by the neural engine.",
     treatment: data.treatment || "Consult a physical specialist for definitive management.",
     isEmergency: !!data.isEmergency,
-    modelVersion: "Anviksha-Genesis-v3.0 (Live)",
-    modelUsed: "Gemini-3-Neural-Core",
+    modelVersion: "Anviksha-Genesis-v1.5-8B (Live)",
+    modelUsed: "Gemini-1.5-Flash-8B",
     cost: data.cost || 0,
   };
 };
