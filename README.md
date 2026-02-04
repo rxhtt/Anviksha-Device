@@ -53,7 +53,9 @@ Secure, localized storage architecture for longitudinal tracking of medical scan
 2.  **Authentication Setup**:
     Configure the following environment variable in your production environment or local configuration:
     ```env
-    API_KEY=your_gemini_api_key_provided_by_author
+    API_KEY=your_gemini_api_key
+    # OR 
+    GEMINI_API_KEY=your_gemini_api_key
     ```
 
 3.  **Execution**:
