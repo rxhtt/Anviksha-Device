@@ -20,7 +20,6 @@ export default class AIManager {
     _getKeys() {
         try {
             const saved = JSON.parse(window.localStorage.getItem('anviksha_neural_links') || '[]');
-            // Use saved keys if they exist, otherwise fallback to system key
             const keys = saved.length > 0 ? saved : [process.env.API_KEY].filter(Boolean);
             return keys;
         } catch (e) {
@@ -37,20 +36,14 @@ export default class AIManager {
         if (keys.length === 0) {
             throw new Error("NEURAL_LINK_OFFLINE: No API keys registered. Visit Settings.");
         }
-        // Rotate logic: ensure index is within bounds
         const key = keys[this.currentKeyIndex % keys.length];
         return new GoogleGenAI({ apiKey: key });
     }
 
-    /**
-     * High-Availability Wrapper
-     * Automatically rotates keys and retries on 429/Quota errors
-     */
     async _callWithRotation(apiFn) {
         const keys = this._getKeys();
         let lastError;
         
-        // Attempt the call up to the number of keys we have available
         for (let attempt = 0; attempt < Math.max(1, keys.length); attempt++) {
             try {
                 return await apiFn();
@@ -58,16 +51,13 @@ export default class AIManager {
                 lastError = error;
                 const errStr = error.toString().toLowerCase();
                 
-                // If it's a quota/bandwidth error, rotate and try next key
                 if (errStr.includes("429") || errStr.includes("quota") || errStr.includes("exhausted") || errStr.includes("limit")) {
                     if (keys.length > 1 && attempt < keys.length - 1) {
-                        console.warn(`Anviksha Core: Key #${this.currentKeyIndex} exhausted. Rotating to next link...`);
+                        console.warn(`Anviksha Core: Key #${this.currentKeyIndex} exhausted. Rotating...`);
                         this.currentKeyIndex = (this.currentKeyIndex + 1) % keys.length;
                         continue;
                     }
                 }
-                
-                // If it's not a quota error or we've run out of keys, break and handle normally
                 break;
             }
         }
@@ -85,7 +75,7 @@ export default class AIManager {
             minute: '2-digit',
             timeZone: 'Asia/Kolkata'
         };
-        return `PHYSICIAN_CONTEXT: Current Date & Time: ${now.toLocaleDateString('en-IN', options)}. LOCATION: India. TIER_TARGET: 2 and 3 cities. No demo mode. Absolute realism.`;
+        return `PHYSICIAN_CONTEXT: ${now.toLocaleDateString('en-IN', options)}. LOCATION: India. TARGET: Clinically accurate diagnostic synthesis.`;
     }
 
     _handleApiError(error) {
@@ -93,12 +83,9 @@ export default class AIManager {
         const errStr = error.toString().toLowerCase() || "";
         
         if (errStr.includes("429") || errStr.includes("quota") || errStr.includes("exhausted")) {
-            return new Error("SYSTEM_ALERT: Neural Bandwidth Exhausted across ALL registered links. Please add more API keys in Settings or upgrade your tier at ai.google.dev/billing.");
+            return new Error("SYSTEM_ALERT: Neural Bandwidth Exhausted across all links. Please verify billing or add more keys.");
         }
-        if (errStr.includes("401") || errStr.includes("key")) {
-            return new Error("SECURITY_ALERT: Unauthorized Access. One or more Neural Link keys are invalid.");
-        }
-        return new Error(`SYSTEM_MALFUNCTION: Core bypass error. ${error.message || "Synthesizer failed."}`);
+        return new Error(`SYSTEM_MALFUNCTION: ${error.message || "Synthesis failed."}`);
     }
 
     _parseDeepJson(rawText) {
@@ -108,7 +95,7 @@ export default class AIManager {
             return JSON.parse(cleanText);
         } catch (e) {
             console.error("Neural Synthesis Failed:", e);
-            throw new Error("CORE_SYNTHESIS_ERROR: Result structure corrupted.");
+            throw new Error("CORE_SYNTHESIS_ERROR: Data integrity check failed.");
         }
     }
 
@@ -118,26 +105,28 @@ export default class AIManager {
             const base64 = await fileToBase64(file);
             const context = this._getCurrentContext();
             
-            const systemInstruction = `You are the Anviksha Genesis Super-Physician. You are a world-class senior consultant radiologist.
+            const systemInstruction = `You are the Anviksha Genesis Super-Physician. You are a senior consultant multi-specialist and radiologist.
             ${context}
-            PROTOCOL:
-            1. Professional Report: Write a formal clinical report using precise terminology.
-            2. Real-World Grounding: Analyze pixels for actual findings. No generic text.
-            3. Precision: confidence MUST be an INTEGER between 0 and 100.
-            4. Emergency: Set isEmergency true only for life-threatening acute findings.
-            5. Valuation: Use realistic Indian private hospital rates (₹800 - ₹2500).`;
+            
+            STRICT PROTOCOL:
+            1. PIXEL ANALYSIS: Perform a deep visual audit of the provided ${modality} image. Look for subtle radiological signs (e.g., ground-glass opacities, trabecular patterns, wave intervals, biomarker values).
+            2. ABSOLUTE REALISM: Do NOT provide generic medical text. If you see a specific fracture, name the exact bone and site. If an ECG is normal, state the specific rhythm (e.g., "Normal Sinus Rhythm at 72bpm").
+            3. NO PLACEHOLDERS: Do not use "Evaluation Required" or "Diagnostic Synthesis" as a condition unless truly inconclusive. Be specific (e.g., "Left Lower Lobe Consolidation").
+            4. CONFIDENCE: Provide an honest integer (0-100). Low confidence is better than fake certainty.
+            5. INDIAN COST: Suggest the specific value of this consultation in INR (₹800-₹3500) based on Indian private healthcare standards.`;
 
             const response = await ai.models.generateContent({
                 model: this.coreModel,
                 contents: {
                     parts: [
                         { inlineData: { data: base64, mimeType: file.type } },
-                        { text: `Synthesize a high-fidelity clinical report for this ${modality} data.` }
+                        { text: `Analyze this ${modality} image and synthesize a granular clinical report. Focus on specific pathological markers.` }
                     ]
                 },
                 config: { 
                     systemInstruction, 
                     responseMimeType: "application/json",
+                    thinkingConfig: { thinkingBudget: 8192 },
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
@@ -163,15 +152,14 @@ export default class AIManager {
             const ai = this._getAiInstance();
             const context = this._getCurrentContext();
             
-            const systemInstruction = `You are a Senior Clinical Pharmacologist. 
-            ${context}
-            TASK: Suggest Indian generic/brand drugs, dosage, and schedules.`;
+            const systemInstruction = `You are a Senior Clinical Pharmacologist. Suggest Indian generic/brand drugs based on symptoms: ${query}. History: ${history}. ${context}`;
 
             const response = await ai.models.generateContent({
                 model: this.coreModel,
-                contents: `Condition: ${query}. History: ${history}. Generate prescription.`,
+                contents: `Condition: ${query}. History: ${history}. Generate precise Indian-market prescription.`,
                 config: { 
                     responseMimeType: "application/json",
+                    thinkingConfig: { thinkingBudget: 4096 },
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
@@ -213,20 +201,8 @@ export default class AIManager {
             });
             return !!response.text;
         } catch (e) {
-            console.error("Gemini connection test failed", e);
             return false;
         }
-    }
-
-    async testGeminiConnection() {
-        return this._callWithRotation(async () => {
-            const ai = this._getAiInstance();
-            const response = await ai.models.generateContent({
-                model: this.chatModel,
-                contents: "ping",
-            });
-            return !!response.text;
-        });
     }
 
     async testFdaConnection(customKey) {
@@ -239,7 +215,6 @@ export default class AIManager {
     async sendChatMessage(text, imageFile) {
         return this._callWithRotation(async () => {
             const ai = this._getAiInstance();
-            const context = this._getCurrentContext();
             const parts = [{ text }];
             if (imageFile) {
                 const b64 = await fileToBase64(imageFile);
@@ -249,7 +224,7 @@ export default class AIManager {
                 model: this.chatModel,
                 contents: { parts },
                 config: { 
-                    systemInstruction: `You are the Anviksha Genesis Super-Physician. ${context}. Expert advice only. Use search for current news.`,
+                    systemInstruction: `You are the Anviksha Genesis Super-Physician. Provide clinically accurate, high-fidelity advice. Use search for recent medical news.`,
                     tools: [{ googleSearch: {} }]
                 }
             });
@@ -260,11 +235,10 @@ export default class AIManager {
     async getTherapyResponse(userText) {
         return this._callWithRotation(async () => {
             const ai = this._getAiInstance();
-            const context = this._getCurrentContext();
             const response = await ai.models.generateContent({
                 model: this.chatModel,
                 contents: userText,
-                config: { systemInstruction: `You are Dr. Anviksha, Wellness Specialist. ${context}.` }
+                config: { systemInstruction: `You are Dr. Anviksha, a wellness specialist focusing on clinical empathy.` }
             });
             return response.text;
         });
@@ -273,12 +247,12 @@ export default class AIManager {
     async performTriage(inputs) {
         return this._callWithRotation(async () => {
             const ai = this._getAiInstance();
-            const context = this._getCurrentContext();
             const response = await ai.models.generateContent({
                 model: this.chatModel,
-                contents: `Triage Context: ${JSON.stringify(inputs)}. ${context}`,
+                contents: `Triage Context: ${JSON.stringify(inputs)}`,
                 config: { 
                     responseMimeType: "application/json",
+                    thinkingConfig: { thinkingBudget: 4096 },
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {

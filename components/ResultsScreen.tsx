@@ -49,9 +49,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden relative">
       
       {/* SCROLLABLE CONTENT */}
-      <div className="flex-1 overflow-y-auto pb-40 px-4 pt-4 no-scrollbar">
+      <div className="flex-1 overflow-y-auto pb-48 px-4 pt-4 no-scrollbar">
           {imageUrl && (
-            <div className="relative h-60 rounded-[2.5rem] overflow-hidden bg-black mb-6 shadow-2xl group cursor-zoom-in border-4 border-white" onClick={() => setIsZoomModalOpen(true)}>
+            <div className="relative h-64 rounded-[2.5rem] overflow-hidden bg-black mb-6 shadow-2xl group cursor-zoom-in border-4 border-white" onClick={() => setIsZoomModalOpen(true)}>
                 <img src={imageUrl} alt="Scan" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-5 left-5 right-5 flex justify-between items-center">
@@ -69,7 +69,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
                 <div className="flex flex-col items-end">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DIAGNOSTIC CORE v3</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NEURAL REASONING v3.2</span>
                     </div>
                 </div>
             </div>
@@ -79,12 +79,12 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
 
             <div className="pt-6 border-t border-slate-50">
                 <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.2em] mb-3">
-                    <span className="text-slate-400">Precision Index</span>
+                    <span className="text-slate-400">Synthesis Confidence</span>
                     <span className="text-slate-900">{displayConfidence.toFixed(0)}%</span>
                 </div>
                 <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
-                        className={`h-full rounded-full transition-all duration-1000 ${isEmergency ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]'}`} 
+                        className={`h-full rounded-full transition-all duration-1000 ${isEmergency ? 'bg-red-500' : 'bg-blue-600'}`} 
                         style={{ width: `${displayConfidence}%` }}
                     ></div>
                 </div>
@@ -93,7 +93,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
 
           <div className="bg-white rounded-[2.5rem] p-7 shadow-sm border border-slate-100 mb-6 space-y-8">
             <div>
-                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4">Clinical Findings</h3>
+                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4">Observation Details</h3>
                 <div className="text-sm text-slate-700 leading-relaxed font-bold border-l-4 border-blue-500 pl-6 py-2 whitespace-pre-wrap italic bg-slate-50/50 rounded-r-2xl">
                     {result.details}
                 </div>
@@ -118,17 +118,17 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, imageFile, onNewA
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1.5">Value</p>
+                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1.5">Valuation</p>
                         <p className="text-2xl font-black text-blue-400 leading-none">₹{result.cost || 1250}</p>
                     </div>
                 </div>
                 <p className="text-[10px] text-slate-500 font-bold leading-relaxed border-t border-white/5 pt-4 uppercase tracking-tighter">
-                    Standardized Indian private specialty consultation value.
+                    Actual consultation cost benchmark based on diagnostic complexity.
                 </p>
           </div>
       </div>
 
-      {/* FIXED ACTION BAR - FIXED OVERLAP */}
+      {/* FIXED ACTION BAR - PREVENT OVERLAP */}
       <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-20px_50px_rgba(0,0,0,0.1)] z-50 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
          <div className="flex gap-4 max-w-md mx-auto">
              {isViewingRecord ? (

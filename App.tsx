@@ -20,15 +20,21 @@ import AIManager from './services/aiManager.js';
 import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } from './types.ts';
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
+  // If the essential diagnostic data is missing, we don't want to show "fake" placeholders.
+  // We'll throw an error which will be caught in runAnalysis.
+  if (!data.condition || !data.description || data.confidence === undefined) {
+      throw new Error("CORE_INTEGRITY_ERROR: The Neural Engine returned an incomplete diagnostic synthesis. Please retry with a clearer scan.");
+  }
+
   return {
     modality: modality,
-    condition: data.condition || "Diagnostic Evaluation Required",
-    confidence: Math.min(100, Math.max(0, data.confidence || 0)),
-    description: data.description || "In-depth clinical summary synthesis failed.",
-    details: data.details || "No granular physiological markers identified.",
-    treatment: data.treatment || "Immediate clinical consultation advised.",
+    condition: data.condition,
+    confidence: Math.min(100, Math.max(0, data.confidence)),
+    description: data.description,
+    details: data.details || "Granular physiological audit data not extracted.",
+    treatment: data.treatment || "Standard clinical protocol advised.",
     isEmergency: !!data.isEmergency,
-    modelVersion: "Genesis-v3.0 (Enterprise)",
+    modelVersion: "Genesis-v3.2 (Active Neural Reasoning)",
     modelUsed: "Gemini-3-Pro-Neural",
     cost: data.cost || 0,
   };
@@ -63,13 +69,13 @@ const App: React.FC = () => {
     try {
         window.localStorage.setItem('patientRecords', JSON.stringify(patientRecords));
     } catch (error) {
-        console.error("Failed to save patient records", error);
+        console.error("Failed to save records", error);
     }
   }, [patientRecords]);
 
   const handleStartService = (modality: Modality) => {
       if (!aiManager.isConfigured()) {
-          setError("System error: Neural key not detected. Please go to Settings.");
+          setError("NEURAL_LINK_OFFLINE: Setup required in System Settings.");
           setCurrentScreen('settings');
           return;
       }
@@ -115,7 +121,7 @@ const App: React.FC = () => {
 
   const runTriage = async (inputs: TriageInputs) => {
     if (!aiManager.isConfigured()) {
-        setError("Neural key missing. Configuration required.");
+        setError("Neural link missing. Configuration required.");
         setCurrentScreen('settings');
         return;
     }
@@ -125,7 +131,6 @@ const App: React.FC = () => {
         setTriageResult(result as TriageResult);
         setCurrentScreen('triage-results');
     } catch (err: any) {
-        console.error("Triage failed", err);
         setError(err.message || "Triage assessment failed.");
     } finally {
         setIsLoading(false);
@@ -146,8 +151,8 @@ const App: React.FC = () => {
       setAnalysisResult({ ...normalizedData, id: `scan-${Date.now()}`, date: new Date().toISOString() });
       setCurrentScreen('results');
     } catch (err: any) {
-      console.error("Analysis failed:", err);
-      setError(err.message || "The Neural Engine could not analyze this image.");
+      console.error("Analysis Error:", err);
+      setError(err.message || "The Neural Engine could not synthesize a valid report.");
       setCurrentScreen('camera');
     } finally {
       setIsLoading(false);
@@ -172,13 +177,11 @@ const App: React.FC = () => {
       case 'triage-results':
         return triageResult && <TriageResultScreen result={triageResult} onProceedToXRay={() => handleStartService('XRAY')} onBack={() => setCurrentScreen('hub')} />;
       case 'camera':
-        let instruction = "Capture image of X-Ray";
-        let title = "Scan X-Ray";
-        if (selectedModality === 'ECG') { instruction = "Capture ECG/EKG Strip"; title = "Scan Cardio"; }
-        if (selectedModality === 'BLOOD') { instruction = "Capture Blood Report"; title = "Scan Report"; }
-        if (selectedModality === 'DERMA') { instruction = "Capture Skin Condition"; title = "Scan Skin"; }
-        if (selectedModality === 'MRI') { instruction = "Capture MRI Slide"; title = "Scan MRI"; }
-        
+        let instruction = "Align X-Ray film clearly";
+        let title = "Scan Imaging";
+        if (selectedModality === 'ECG') { instruction = "Align ECG Strip clearly"; title = "Scan Cardiac"; }
+        if (selectedModality === 'BLOOD') { instruction = "Align Lab Report clearly"; title = "Scan Lab"; }
+        if (selectedModality === 'DERMA') { instruction = "Capture lesion in focus"; title = "Scan Derma"; }
         return <CameraScreen onStartScan={handleStartScan} error={error} onBackToHome={handleBack} instructionText={instruction} title={title} modality={selectedModality} />;
       case 'analysis':
         return <AnalysisScreen onCancel={handleBack} />;
