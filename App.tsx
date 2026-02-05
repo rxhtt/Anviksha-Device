@@ -21,7 +21,7 @@ import type { Screen, AnalysisResult, TriageInputs, TriageResult, Modality } fro
 
 const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 'id' | 'date'> => {
   if (!data.condition || !data.description || data.confidence === undefined) {
-      throw new Error("CORE_INTEGRITY_ERROR: The Neural Engine returned an incomplete diagnostic synthesis. Please ensure clear imaging and check Vision API billing.");
+      throw new Error("CORE_INTEGRITY_ERROR: The Neural Engine could not synthesize a medical report. Verify Vision and Consultation links.");
   }
 
   return {
@@ -32,8 +32,8 @@ const normalizeAiResult = (data: any, modality: Modality): Omit<AnalysisResult, 
     details: data.details || "Granular physiological audit data not extracted.",
     treatment: data.treatment || "Standard clinical protocol advised.",
     isEmergency: !!data.isEmergency,
-    modelVersion: "Genesis-v3.5 (Optical + Neural Reasoning)",
-    modelUsed: "Google Vision + Gemini-3-Flash",
+    modelVersion: "Genesis-v4.0 (Isolated Multi-Channel)",
+    modelUsed: "Optical Vision API + Neural Synth",
     cost: data.cost || 1250,
   };
 };
@@ -72,26 +72,16 @@ const App: React.FC = () => {
   }, [patientRecords]);
 
   const handleStartService = async (modality: Modality) => {
-      const visionConfigured = await aiManager.isConfigured('vision');
-      const chatConfigured = await aiManager.isConfigured('chat');
+      const visionOk = await aiManager.isConfigured('vision');
+      const chatOk = await aiManager.isConfigured('chat');
       
-      if (!visionConfigured || !chatConfigured) {
-          setError("NEURAL_LINK_OFFLINE: Imaging requires both Vision and Chat channels. Visit Settings.");
+      if (!visionOk || !chatOk) {
+          setError("NEURAL_LINK_OFFLINE: Imaging requires both Optical Vision and Consultation links. Visit Settings.");
           setCurrentScreen('settings');
           return;
       }
       setSelectedModality(modality);
       setCurrentScreen('camera');
-  };
-
-  const checkModuleConfig = async (module: 'chat' | 'therapy' | 'vision') => {
-      const ok = await aiManager.isConfigured(module);
-      if (!ok) {
-          setError(`CHANNEL_OFFLINE: ${module.toUpperCase()} link required.`);
-          setCurrentScreen('settings');
-          return false;
-      }
-      return true;
   };
 
   const handleStartScan = (file: File) => {
@@ -131,7 +121,11 @@ const App: React.FC = () => {
   };
 
   const runTriage = async (inputs: TriageInputs) => {
-    if (!(await checkModuleConfig('chat'))) return;
+    if (!(await aiManager.isConfigured('chat'))) {
+        setError("Consultation Link required for Triage.");
+        setCurrentScreen('settings');
+        return;
+    }
     setIsLoading(true);
     try {
         const result = await aiManager.performTriage(inputs);
@@ -145,7 +139,6 @@ const App: React.FC = () => {
   };
 
   const runAnalysis = async (file: File) => {
-    if (!(await checkModuleConfig('vision')) || !(await checkModuleConfig('chat'))) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -211,13 +204,16 @@ const App: React.FC = () => {
                   onShowRecords={() => setCurrentScreen('records')}
                   onShowDetails={() => setCurrentScreen('details')}
                   onOpenChat={async () => {
-                      if (await checkModuleConfig('chat')) setCurrentScreen('chat');
+                      if (await aiManager.isConfigured('chat')) setCurrentScreen('chat');
+                      else { setError("Consultation Link required."); setCurrentScreen('settings'); }
                   }}
                   onOpenPharmacy={async () => {
-                      if (await checkModuleConfig('chat')) setCurrentScreen('pharmacy');
+                      if (await aiManager.isConfigured('chat')) setCurrentScreen('pharmacy');
+                      else { setError("Consultation Link required."); setCurrentScreen('settings'); }
                   }}
                   onOpenTherapy={async () => {
-                      if (await checkModuleConfig('therapy')) setCurrentScreen('therapy');
+                      if (await aiManager.isConfigured('therapy')) setCurrentScreen('therapy');
+                      else { setError("Therapy Link required."); setCurrentScreen('settings'); }
                   }}
                   onOpenSettings={() => setCurrentScreen('settings')}
                 />;

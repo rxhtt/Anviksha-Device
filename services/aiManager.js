@@ -17,29 +17,53 @@ export default class AIManager {
     }
 
     _getStoredKey(name) {
-        return window.localStorage.getItem(`anviksha_${name}_link`) || process.env.API_KEY || '';
+        return window.localStorage.getItem(`anviksha_${name}_link`) || '';
     }
 
     async isConfigured(module = 'any') {
-        if (module === 'vision') return !!this._getStoredKey('vision');
-        if (module === 'chat') return !!this._getStoredKey('chat');
-        if (module === 'therapy') return !!this._getStoredKey('therapy');
-        
-        // Default check for any key configuration
-        return !!(this._getStoredKey('vision') || this._getStoredKey('chat') || this._getStoredKey('therapy'));
-    }
-
-    async requestKeySelection() {
-        if (typeof window.aistudio?.openSelectKey === 'function') {
-            await window.aistudio.openSelectKey();
-            return true;
+        if (module === 'any') {
+            return !!(this._getStoredKey('vision') && this._getStoredKey('chat'));
         }
-        return false;
+        return !!this._getStoredKey(module);
     }
 
     /**
-     * STAGE 1: Google Vision API (REST)
-     * Performs raw optical analysis of the medical image.
+     * VERIFICATION SUITE: Individual testing for each channel
+     */
+    async verifyLink(type, key) {
+        if (!key) return { success: false, message: "Key required" };
+        
+        try {
+            if (type === 'vision') {
+                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ requests: [{ image: { content: "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" }, features: [{ type: "LABEL_DETECTION" }] }] })
+                });
+                return { success: res.ok, message: res.ok ? "Optical Link Active" : "Invalid Vision Key" };
+            }
+
+            if (type === 'chat' || type === 'therapy') {
+                const ai = new GoogleGenAI({ apiKey: key });
+                const response = await ai.models.generateContent({
+                    model: this.chatModel,
+                    contents: "ping",
+                });
+                return { success: !!response.text, message: response.text ? "Neural Link Active" : "No response" };
+            }
+
+            if (type === 'fda') {
+                const res = await fetch(`https://api.fda.gov/drug/label.json?api_key=${key}&limit=1`);
+                return { success: res.ok, message: res.ok ? "FDA Database Linked" : "Invalid FDA Key" };
+            }
+        } catch (e) {
+            return { success: false, message: e.message || "Connection Failed" };
+        }
+        return { success: false, message: "Unknown Channel" };
+    }
+
+    /**
+     * STAGE 1: Google Vision API (Direct REST)
+     * Bypasses Gemini to perform raw optical inspection.
      */
     async _callVisionApi(base64, modality) {
         const visionKey = this._getStoredKey('vision');
@@ -51,8 +75,7 @@ export default class AIManager {
                 image: { content: base64 },
                 features: [
                     { type: "TEXT_DETECTION" },
-                    { type: "LABEL_DETECTION", maxResults: 10 },
-                    { type: "OBJECT_LOCALIZATION" },
+                    { type: "LABEL_DETECTION", maxResults: 15 },
                     { type: "IMAGE_PROPERTIES" }
                 ]
             }]
@@ -74,34 +97,33 @@ export default class AIManager {
 
     /**
      * STAGE 2: Neural Synthesis
-     * Uses the Chat Key (Gemini) to turn raw Vision data into a medical report.
+     * Uses the Consultation Link (Chat Key) to synthesize the Vision data into a medical report.
      */
     async analyzeImage(file, modality) {
         const base64 = await fileToBase64(file);
         
-        // 1. Get raw visual evidence from Google Vision
+        // 1. Get raw optical evidence
         const visionData = await this._callVisionApi(base64, modality);
         const opticalEvidence = visionData.responses[0];
         
-        // 2. Synthesize clinical report using Chat Key (Gemini)
+        // 2. Synthesize using Consultation Link (Chat Key)
         const chatKey = this._getStoredKey('chat');
         const ai = new GoogleGenAI({ apiKey: chatKey });
         
         const systemInstruction = `You are the Anviksha Genesis Senior Radiologist. 
-        Synthesize a report based on provided OPTICAL EVIDENCE from Google Vision API.
+        Synthesize a structured clinical report based on provided OPTICAL EVIDENCE.
         MODALITY: ${modality}.
-        EVIDENCE: ${JSON.stringify(opticalEvidence).substring(0, 3000)}
         
         STRICT PROTOCOL:
-        1. NO HALLUCINATION: Only report findings supported by optical labels or detected text.
-        2. MEDICAL TERMINOLOGY: Use professional clinical language.
-        3. REALISM: If labels are inconclusive, state "Radiological scan requires higher contrast".
+        1. NO HALLUCINATION: Only report findings supported by detected labels or text.
+        2. PIXEL AUDIT: Interpret detected objects (e.g., bones, markers) clinically.
+        3. REALISM: If the vision API returns non-medical labels, state "Optical profile mismatch".
         4. COST: Benchmark in INR (₹1200 - ₹4500).`;
 
         const response = await ai.models.generateContent({
             model: this.chatModel,
-            contents: `Optical markers detected: ${opticalEvidence.labelAnnotations?.map(a => a.description).join(', ')}. 
-                       Text detected: ${opticalEvidence.fullTextAnnotation?.text || "None"}.
+            contents: `Optical labels: ${opticalEvidence.labelAnnotations?.map(a => a.description).join(', ')}. 
+                       Detected text: ${opticalEvidence.fullTextAnnotation?.text || "None"}.
                        Synthesize the final physician report for this ${modality} scan.`,
             config: {
                 systemInstruction,
@@ -122,21 +144,18 @@ export default class AIManager {
             }
         });
 
-        try {
-            const cleanText = response.text.replace(/```json|```/g, '').trim();
-            return JSON.parse(cleanText);
-        } catch (e) {
-            throw new Error("SYNTHESIS_ERROR: Failed to generate medical report from visual evidence.");
-        }
+        const cleanText = response.text.replace(/```json|```/g, '').trim();
+        return JSON.parse(cleanText);
     }
 
     async getPharmacySuggestions(query, history = "") {
         const key = this._getStoredKey('chat');
+        const fdaKey = this._getStoredKey('fda');
         const ai = new GoogleGenAI({ apiKey: key });
         
         const response = await ai.models.generateContent({
             model: this.chatModel,
-            contents: `Symptoms: ${query}. History: ${history}. Generate Indian prescription.`,
+            contents: `Symptoms: ${query}. History: ${history}. Generate Indian prescription. Use FDA reference if applicable.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -174,12 +193,10 @@ export default class AIManager {
         const key = this._getStoredKey('chat');
         const ai = new GoogleGenAI({ apiKey: key });
         const parts = [{ text }];
-        
         if (imageFile) {
             const b64 = await fileToBase64(imageFile);
             parts.push({ inlineData: { data: b64, mimeType: imageFile.type } });
         }
-
         const response = await ai.models.generateContent({
             model: this.chatModel,
             contents: { parts },
